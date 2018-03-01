@@ -1,0 +1,29 @@
+version: '2'
+services:
+  db:
+    image: postgres:latest
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: password
+    volumes:
+      - /var/lib/postgresql/VR-EP1/data:/var/lib/postgresql/data
+    ports:
+      - 5432:5432
+    networks:
+      - network1
+  php:
+    image: php:7.0-apache
+    restart: always
+    volumes:
+      - /home/paulo/teste_php:/var/www/html
+    ports:
+      - 8889:80
+    networks:
+      - network1
+networks:
+  network1:
+    driver: bridge
+  network2:
+    driver: bridge
+  network3:
+    driver: bridge
