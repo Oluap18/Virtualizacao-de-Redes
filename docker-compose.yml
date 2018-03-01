@@ -15,11 +15,35 @@ services:
     image: php:7.0-apache
     restart: always
     volumes:
-      - /home/paulo/teste_php:/var/www/html
+      - ~/VR-EP1/service_auth:/var/www/html
     ports:
       - 8889:80
     networks:
       - network1
+      - network2
+  php2:
+    image: php:7.0-apache
+    restart: always
+    volumes:
+      - ~/VR-EP1/service_mail:/var/www/html
+    ports:
+      - 8890:80
+    networks:
+      - network2
+      - network3
+  smtp:
+    image: mamshi/smtp
+    restart: always
+    volumes:
+      - ~/VR-EP1/server_mail
+    ports:
+      - 25:25
+      - 587:587
+      - 2525:2525
+      - 465:465
+      - 25025:25025
+    networks:
+      - network3
 networks:
   network1:
     driver: bridge
