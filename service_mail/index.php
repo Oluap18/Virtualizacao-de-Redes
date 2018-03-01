@@ -1,25 +1,29 @@
 <!DOCTYPE html>
 <html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Mail Service</title>
+    <link rel="stylesheet" href="css/reset.css">
+    <link rel="stylesheet" href="css/style.css" media="screen" type="text/css" />
+  </head>
   <body>
-    <form action="mail.php" method="POST">
-      Sender token:<br>
-      <input type="text" name="token">
+    <div class="wrap">
+      <div class="avatar">
+        <img src="https://digitalnomadsforum.com/styles/FLATBOOTS/theme/images/user4.png">
+      </div>
       <br>
-      To:<br>
-      <input type="email" name="emailto">
-      <br>
-      Subject:<br>
-      <input type="text" name="subject">
-      <br>
-      Message:<br>
-      <textarea name="message" rows="20" cols="60">
-      Enter message here.
-      </textarea>
-      <br>
-      <input type="submit" value="Send">
-    </form>
+      <form action="mail.php" method="POST">
+        <input type="text" required name="token" placeholder="Token">
+        <br>
+        <input type="email" required name="emailto" placeholder="Receivers e-mail">
+        <br>
+        <input type="text" required name="subject" placeholder="Subject">
+        <br>
+        <textarea class="msgtext" required name="message" placeholder="Type your message here"></textarea>
+        <br><br>
+        <button>Send</button>
+      </form>
+    </div>
   </body>
 
 </html>
-
-
