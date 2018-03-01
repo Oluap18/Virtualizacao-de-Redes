@@ -32,7 +32,7 @@ services:
       - network2
       - network3
   smtp:
-    image: mamshi/smtp
+    image: namshi/smtp
     restart: always
     volumes:
       - ~/VR-EP1/server_mail
