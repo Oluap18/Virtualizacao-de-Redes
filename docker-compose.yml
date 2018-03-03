@@ -6,13 +6,13 @@ services:
     environment:
       POSTGRES_PASSWORD: password
     volumes:
-      - /var/lib/postgresql/VR-EP1/data:/var/lib/postgresql/data
+      - ~/VR-EP1/postgresql/data:/var/lib/postgresql/data
     ports:
       - 5432:5432
     networks:
       - network1
-  php:
-    image: php:7.0-apache
+  aut:
+    build: ./php
     restart: always
     volumes:
       - ~/VR-EP1/service_auth:/var/www/html
@@ -21,13 +21,13 @@ services:
     networks:
       - network1
       - network2
-  php2:
-    image: php:7.0-apache
+  php:
+    build: php:7.0-apache
     restart: always
     volumes:
-      - ~/VR-EP1/service_mail:/var/www/html
+      - ~/VR-EP1/service_auth:/var/www/html
     ports:
-      - 8890:80
+      - 8889:80
     networks:
       - network2
       - network3
