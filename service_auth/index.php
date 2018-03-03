@@ -13,13 +13,13 @@ try{
 
 $users = 'CREATE TABLE IF NOT EXISTS users (
   userid serial,
-  mail VARCHAR(255) NOT NULL PRIMARY KEY,
+  username VARCHAR(255) NOT NULL PRIMARY KEY,
   password VARCHAR(255) NOT NULL
 );';
 
 $tokens = 'CREATE TABLE IF NOT EXISTS tokens (
-  tokenid integer NOT NULL PRIMARY KEY,
-  userid integer NOT NULL
+  tokenid integer NOT NULL,
+  userid integer NOT NULL PRIMARY KEY
 );';
 
 $vars = 'CREATE TABLE IF NOT EXISTS vars (
@@ -78,7 +78,9 @@ $r = null;
           <i></i>
         </div>
         <input name="password" type="password" placeholder="password" required>
-        <button type="submit">Sign in</button>
+        <button type="submit">Register</button>
+        <button type="submit" formaction="login.php">Login</button>
+      </form>
       </form>
     </div>
   </body>

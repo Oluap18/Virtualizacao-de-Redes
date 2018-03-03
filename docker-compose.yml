@@ -22,12 +22,12 @@ services:
       - network1
       - network2
   php:
-    build: php:7.0-apache
+    build: ./php
     restart: always
     volumes:
-      - ~/Desktop/VR-EP1/service_auth:/var/www/html
+      - ~/Desktop/VR-EP1/service_mail:/var/www/html
     ports:
-      - 8889:80
+      - 8890:80
     networks:
       - network2
       - network3
