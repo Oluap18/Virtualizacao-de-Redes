@@ -30,17 +30,17 @@ $mail->isSMTP();
 // 2 = client and server messages
 $mail->SMTPDebug = 2;
 //Set the hostname of the mail server
-$mail->Host = '172.25.0.2';
+$mail->Host = '172.21.0.2';
 //Set the SMTP port number - likely to be 25, 465 or 587
 $mail->Port = 25;
 //We don't need to set this as it's the default value
 //$mail->SMTPAuth = false;
 //Set who the message is to be sent from
-$mail->setFrom('from@example.com', 'First Last');
+$mail->setFrom('mail@server.uminho.pt', 'Virt. Redes');
 //Set an alternative reply-to address
-$mail->addReplyTo('replyto@example.com', 'First Last');
+$mail->addReplyTo('jrsmiguel@outlook.pt', 'Admin');
 //Set who the message is to be sent to
-$mail->addAddress($mailto, 'John Doe');
+$mail->addAddress($mailto, explode('@', $mailto)[0]);
 //Set the subject line
 $mail->Subject = $subject;
 //Read an HTML message body from an external file, convert referenced images to embedded,
