@@ -13,7 +13,6 @@ foreach($full_output as $row){
 }
 
 $token = 'http://'.$host.'/checkToken.php';
-echo $login;
 ?>
 
 <html>
