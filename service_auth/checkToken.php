@@ -43,7 +43,6 @@ $checkToken = 'SELECT userid FROM tokens WHERE tokenid = '.$_POST['token'].';';
 $r = $conn->query($checkToken);
 if($r->rowCount() !== 0){
 ?>
-
   #Fazer isto com javascript de maneira a que não seja necessário carregar no botão para
   #Fazer submite, de modo a executar isto automáticamente
   <form action="<?php echo $sendMail; ?>" method="POST">
@@ -57,4 +56,10 @@ if($r->rowCount() !== 0){
     <br><br>
     <button>Send</button>
   </form>
+<?php
 }
+else{
+  #Inserir uma mensagem de error qualquer
+  echo "Token inválido\n";
+}
+?>
