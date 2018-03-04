@@ -2,7 +2,25 @@
 <html>
 
 <?php
-$conn_string = "host=192.168.1.7;port=5432;dbname=vr;user=vr;password=vr";
+#Get the ipaddress
+$iter = 0;
+$found = false;
+$last_line = exec('ip addr show', $full_output);
+foreach($full_output as $row){
+  #Encontrar a interface correta
+  $comp = substr($row, 4, 4);
+  if(strcmp($comp, "eth0") == 0){
+    $found = true;
+  }
+  if($found == true){
+    $iter++;
+  }
+  if($iter == 3){
+    $host = substr($row, 9, 9)."2";
+    break;
+  }
+}
+$conn_string = "host=$host;port=5432;dbname=vr;user=vr;password=vr";
 try{
   $conn = new PDO("pgsql:".$conn_string);
 }catch (PDOException $e){
@@ -19,10 +37,10 @@ foreach ($conn->query($getUser) as $row) {
 $insertUser = 'INSERT INTO users (userid, username, password) VALUES ('.$user.',\''.$_POST['username'].'\',\''.$_POST['password'].'\');';
 $r = $conn->query($updateUser);
 if($r !== false){
-
+  echo "Registado com sucesso\n";
 }
 else{
-  print("Erro no update\n");
+  echo "Erro a atualizar o userid\n";
 }
 
 $r = $conn->query($insertUser);
@@ -30,35 +48,9 @@ if($r !== false){
 
 }
 else{
-  print("Erro no insert\n");
+  echo "Erro a inserir o novo utilizador\n";
 }
 
 $conn = null;
-
-?>
-  <head>
-    <meta charset="UTF-8">
-    <title>Auth Service</title>
-    <link rel="stylesheet" href="css/reset.css">
-    <link rel="stylesheet" href="css/style.css" media="screen" type="text/css" />
-  </head>
-  <body>
-    <div class="wrap">
-      <div class="avatar">
-        <img src="https://digitalnomadsforum.com/styles/FLATBOOTS/theme/images/user4.png">
-      </div>
-      <form action="sign.php" method="post">
-        <input name="username" type="text" placeholder="username" required>
-        <div class="bar">
-          <i></i>
-        </div>
-        <input name="password" type="password" placeholder="password" required>
-        <button type="submit">Register</button>
-        <button type="submit" formaction="login.php">Login</button>
-      </form>
-      </form>
-    </div>
-  </body>
-</html>
 
 ?>

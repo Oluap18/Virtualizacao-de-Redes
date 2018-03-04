@@ -1,5 +1,23 @@
 <?php
-$conn_string = "host=192.168.1.7;port=5432;dbname=vr;user=vr;password=vr";
+#Get the ipaddress
+$iter = 0;
+$found = false;
+$last_line = exec('ip addr show', $full_output);
+foreach($full_output as $row){
+  #Encontrar a interface correta
+  $comp = substr($row, 4, 4);
+  if(strcmp($comp, "eth0") == 0){
+    $found = true;
+  }
+  if($found == true){
+    $iter++;
+  }
+  if($iter == 3){
+    $host = substr($row, 9, 9)."2";
+    break;
+  }
+}
+$conn_string = "host=$host;port=5432;dbname=vr;user=vr;password=vr";
 try{
   $conn = new PDO("pgsql:".$conn_string);
 }catch (PDOException $e){
@@ -27,7 +45,10 @@ if($r->rowCount() !== 0){
         echo $token."\n";
       }
       else{
-        echo "Já efetuou o login\n";
+        $updateUser = 'UPDATE tokens SET tokenid = '.$token.' WHERE userid = '.$row['userid'].';';
+        $res = $conn->query($updateUser);
+        $res = $conn->query($updateToken);
+        echo $token."\n";
       }
     }
     else{

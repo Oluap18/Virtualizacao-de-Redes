@@ -2,8 +2,25 @@
 <html>
 
 <?php
-
-$conn_string = "host=192.168.1.7;port=5432;dbname=vr;user=vr;password=vr";
+#Get the ipaddress
+$iter = 0;
+$found = false;
+$last_line = exec('ip addr show', $full_output);
+foreach($full_output as $row){
+  #Encontrar a interface correta
+  $comp = substr($row, 4, 4);
+  if(strcmp($comp, "eth0") == 0){
+    $found = true;
+  }
+  if($found == true){
+    $iter++;
+  }
+  if($iter == 3){
+    $host = substr($row, 9, 9)."2";
+    break;
+  }
+}
+$conn_string = "host=$host;port=5432;dbname=vr;user=vr;password=vr";
 try{
   $conn = new PDO("pgsql:".$conn_string);
 }catch (PDOException $e){
@@ -72,7 +89,7 @@ $r = null;
       <div class="avatar">
         <img src="https://digitalnomadsforum.com/styles/FLATBOOTS/theme/images/user4.png">
       </div>
-      <form action="sign.php" method="post">
+      <form action="sign.php" method="post" target="_blank">
         <input name="username" type="text" placeholder="username" required>
         <div class="bar">
           <i></i>
@@ -80,7 +97,6 @@ $r = null;
         <input name="password" type="password" placeholder="password" required>
         <button type="submit">Register</button>
         <button type="submit" formaction="login.php">Login</button>
-      </form>
       </form>
     </div>
   </body>
