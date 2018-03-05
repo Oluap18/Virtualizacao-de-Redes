@@ -1,5 +1,24 @@
 <?php
 
+#Get the ipaddress
+$iter = 0;
+$found = false;
+$last_line = exec('ifconfig', $full_output);
+foreach($full_output as $row){
+  #Encontrar a interface correta
+  $comp = substr($row, 0, 4);
+  if(strcmp($comp, "eth0") == 0){
+    $found = true;
+  }
+  if($found == true){
+    $iter++;
+  }
+  if($iter == 2){
+    $host = substr($row, 20, 9)."2";
+    break;
+  }
+}
+
 $subject = $_POST['subject'];
 $mailto = $_POST['emailto'];
 $body = $_POST['message'];
@@ -30,7 +49,7 @@ $mail->isSMTP();
 // 2 = client and server messages
 $mail->SMTPDebug = 2;
 //Set the hostname of the mail server
-$mail->Host = '172.21.0.2';
+$mail->Host = '172.19.0.2';
 //Set the SMTP port number - likely to be 25, 465 or 587
 $mail->Port = 25;
 //We don't need to set this as it's the default value

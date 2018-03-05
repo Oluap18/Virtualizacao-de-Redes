@@ -35,17 +35,10 @@ foreach ($conn->query($getUser) as $row) {
   $user = $row['userid'];
 }
 $insertUser = 'INSERT INTO users (userid, username, password) VALUES ('.$user.',\''.$_POST['username'].'\',\''.$_POST['password'].'\');';
-$r = $conn->query($updateUser);
-if($r !== false){
-  echo "Registado com sucesso\n";
-}
-else{
-  echo "Erro a atualizar o userid\n";
-}
-
 $r = $conn->query($insertUser);
 if($r !== false){
-
+  $r = $conn->query($updateUser);
+  echo "Registado com sucesso\n";
 }
 else{
   echo "Erro a inserir o novo utilizador\n";

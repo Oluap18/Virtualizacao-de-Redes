@@ -10,11 +10,14 @@ foreach($full_output as $row){
   if(strcmp($comp, "eth0") == 0){
     $found0 = true;
   }
+  if(strcmp($comp, "eth1") == 0){
+    $found1 = true;
+  }
   if($found0 == true || $found1 == true){
     $iter++;
   }
   if($iter == 2){
-    if(strcmp(substr($row, 29, 1),"3")==0){
+    if(strcmp(substr($row, 29, 1),"4")==0){
       if($found0 == true){
         $hostDB = substr($row, 20, 9)."2";
         $found0 = false;
@@ -27,11 +30,11 @@ foreach($full_output as $row){
     }
     else{
       if($found0 == true){
-        $hostDB = substr($row, 20, 9)."3";
+        $hostDB = substr($row, 20, 9)."2";
         $found0 = false;
       }
       else{
-        $hostPHP = substr($row, 20, 9)."3";
+        $hostPHP = substr($row, 20, 9)."2";
         $found1 = false;
       }
       $iter = 0;
@@ -52,18 +55,18 @@ $checkToken = 'SELECT userid FROM tokens WHERE tokenid = '.$_POST['token'].';';
 $r = $conn->query($checkToken);
 if($r->rowCount() !== 0){
 ?>
-  <script>document.getElementById("click-me " ) .click()</script>
-  <form action="<?php echo $sendMail; ?>" method="POST">
-    <input type="text" required name="token" placeholder="Token" #Colocar como value $_POST['token'] se necessário>
+  <form action="<?php echo $sendMail; ?>" method="POST" target="_self">
+    <input type="text" required name="token" placeholder="Token" value = <?php echo $_POST['token'];?> >
     <br>
-    <input type="email" required name="emailto" placeholder="Receivers e-mail" #Colocar como value $_POST['emailto'] se necessário>
+    <input type="email" required name="emailto" placeholder="Receivers e-mail" value = <?php echo $_POST['emailto']; ?>>
     <br>
-    <input type="text" required name="subject" placeholder="Subject" #Colocar como value $_POST['subject'] se necessário>
+    <input type="text" required name="subject" placeholder="Subject" value = <?php echo $_POST['subject']; ?>>
     <br>
-    <textarea class="msgtext" required name="message" placeholder="Type your message here" #Colocar como value $_POST['message'] se necessário></textarea>
+    <textarea class="msgtext" required name="message" placeholder="Type your message here"><?php echo $_POST['message']; ?></textarea>
     <br><br>
     <button id="click-me">Send</button>
   </form>
+  <script>document.getElementById("click-me").click();</script>
 <?php
 }
 else{

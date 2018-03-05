@@ -15,11 +15,11 @@ foreach($full_output as $row){
     $iter++;
   }
   if($iter == 2){
-    if(strcmp(substr($row, 29, 1),"3")==0){
-      $host = substr($row, 20, 9)."2";
+    if(strcmp(substr($row, 29, 1),"2")==0){
+      $host = substr($row, 20, 9)."4";
     }
     else{
-      $host = substr($row, 20, 9)."3";
+      $host = substr($row, 20, 9)."2";
     }
     break;
   }

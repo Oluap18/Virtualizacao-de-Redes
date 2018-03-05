@@ -44,15 +44,15 @@ services:
       - 25025:25025
     networks:
       - network3
-  haproxy:
-    build: ./haproxy
-    restart: always
-    volumes:
-      - ~/Desktop/VR-EP1/haproxy/etc/default/haproxy:/etc/default/haproxy
-    ports:
-      - 9000:80
-    networks:
-      - network2
+  #haproxy:
+  #  build: ./haproxy
+  #  restart: always
+  #  volumes:
+  #    - ~/Desktop/VR-EP1/haproxy/etc/default/haproxy:/etc/default/haproxy
+  #  ports:
+  #    - 9000:80
+  #  networks:
+  #    - network2
 networks:
   network1:
     driver: bridge
