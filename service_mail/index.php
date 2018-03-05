@@ -3,13 +3,26 @@
 <?php
 #Get the ipaddress
 $iter = 0;
-$last_line = exec('ip addr show', $full_output);
+$found = false;
+$last_line = exec('ifconfig', $full_output);
 foreach($full_output as $row){
-  if($iter == 10){
-    $host = substr($row, 9, 9).'3';
+  #Encontrar a interface correta
+  $comp = substr($row, 0, 4);
+  if(strcmp($comp, "eth0") == 0){
+    $found = true;
+  }
+  if($found == true){
+    $iter++;
+  }
+  if($iter == 2){
+    if(strcmp(substr($row, 29, 1),"3")==0){
+      $host = substr($row, 20, 9)."2";
+    }
+    else{
+      $host = substr($row, 20, 9)."3";
+    }
     break;
   }
-  $iter++;
 }
 
 $token = 'http://'.$host.'/checkToken.php';

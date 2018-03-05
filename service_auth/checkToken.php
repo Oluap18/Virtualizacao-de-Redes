@@ -3,30 +3,39 @@
 $iter = 0;
 $found0 = false;
 $found1 = false;
-$last_line = exec('ip addr show', $full_output);
+$last_line = exec('ifconfig', $full_output);
 foreach($full_output as $row){
-  #Encontrar a interface correta, e guardar os ips
-  $comp = substr($row, 4, 4);
+  #Encontrar a interface correta
+  $comp = substr($row, 0, 4);
   if(strcmp($comp, "eth0") == 0){
     $found0 = true;
-    $found1 = false;
-    $iter = 0;
-  }
-  if(strcmp($comp, "eth1") == 0){
-    $found1 = true;
-    $found0 = false;
-    $iter = 0;
   }
   if($found0 == true || $found1 == true){
     $iter++;
   }
-  if($iter == 3 && $found1 == false){
-    $hostDB = substr($row, 9, 9)."2";
-    break;
-  }
-  if($iter == 3 && $found0 == false){
-    $hostPHP = substr($row, 9, 9)."2";
-    break;
+  if($iter == 2){
+    if(strcmp(substr($row, 29, 1),"3")==0){
+      if($found0 == true){
+        $hostDB = substr($row, 20, 9)."2";
+        $found0 = false;
+      }
+      else{
+        $hostPHP = substr($row, 20, 9)."2";
+        $found1 = false;
+      }
+      $iter = 0;
+    }
+    else{
+      if($found0 == true){
+        $hostDB = substr($row, 20, 9)."3";
+        $found0 = false;
+      }
+      else{
+        $hostPHP = substr($row, 20, 9)."3";
+        $found1 = false;
+      }
+      $iter = 0;
+    }
   }
 }
 
@@ -43,8 +52,7 @@ $checkToken = 'SELECT userid FROM tokens WHERE tokenid = '.$_POST['token'].';';
 $r = $conn->query($checkToken);
 if($r->rowCount() !== 0){
 ?>
-  #Fazer isto com javascript de maneira a que não seja necessário carregar no botão para
-  #Fazer submite, de modo a executar isto automáticamente
+  <script>document.getElementById("click-me " ) .click()</script>
   <form action="<?php echo $sendMail; ?>" method="POST">
     <input type="text" required name="token" placeholder="Token" #Colocar como value $_POST['token'] se necessário>
     <br>
@@ -54,7 +62,7 @@ if($r->rowCount() !== 0){
     <br>
     <textarea class="msgtext" required name="message" placeholder="Type your message here" #Colocar como value $_POST['message'] se necessário></textarea>
     <br><br>
-    <button>Send</button>
+    <button id="click-me">Send</button>
   </form>
 <?php
 }

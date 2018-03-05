@@ -5,24 +5,35 @@
 #Get the ipaddress
 $iter = 0;
 $found = false;
-$last_line = exec('ip addr show', $full_output);
+$last_line = exec('ifconfig', $full_output);
 foreach($full_output as $row){
   #Encontrar a interface correta
-  $comp = substr($row, 4, 4);
+  $comp = substr($row, 0, 4);
   if(strcmp($comp, "eth0") == 0){
     $found = true;
   }
   if($found == true){
     $iter++;
   }
-  if($iter == 3){
-    $host = substr($row, 9, 9)."2";
+  if($iter == 2){
+    if(strcmp(substr($row, 29, 1),"3")==0){
+      $host = substr($row, 20, 9)."2";
+    }
+    else{
+      $host = substr($row, 20, 9)."3";
+    }
     break;
   }
 }
 $conn_string = "host=$host;port=5432;dbname=vr;user=vr;password=vr";
 try{
   $conn = new PDO("pgsql:".$conn_string);
+  if($conn !== false){
+
+  }
+  else{
+    echo "Connection to database failed\n";
+  }
 }catch (PDOException $e){
   // report error message
   echo $e->getMessage();
@@ -73,10 +84,8 @@ if($r !== false){
 }else{
   echo "Error creating the users table\n";
 }
-
 $conn = null;
 $r = null;
-
 ?>
   <head>
     <meta charset="UTF-8">
