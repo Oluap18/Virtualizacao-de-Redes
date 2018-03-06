@@ -3,6 +3,7 @@ services:
   db:
     image: postgres:latest
     restart: always
+    container_name: db
     environment:
       POSTGRES_PASSWORD: password
     volumes:
@@ -10,30 +11,38 @@ services:
     ports:
       - 5432:5432
     networks:
-      - network1
+      network1:
+        ipv4_address: 172.51.0.2
   aut:
     build: ./php
     restart: always
+    container_name: aut
     volumes:
       - ~/Desktop/VR-EP1/service_auth:/var/www/html
     ports:
       - 8889:80
     networks:
-      - network1
-      - network2
+      network1:
+        ipv4_address: 172.51.0.3
+      network2:
+        ipv4_address: 172.52.0.2
   php:
     build: ./php
     restart: always
+    container_name: mail
     volumes:
       - ~/Desktop/VR-EP1/service_mail:/var/www/html
     ports:
       - 8890:80
     networks:
-      - network2
-      - network3
+      network2:
+        ipv4_address: 172.52.0.3
+      network3:
+        ipv4_address: 172.53.0.2
   smtp:
     image: namshi/smtp
     restart: always
+    container_name: smtp
     volumes:
       - ~/Desktop/VR-EP1/server_mail
     ports:
@@ -43,20 +52,34 @@ services:
       - 465:465
       - 25025:25025
     networks:
-      - network3
-  #haproxy:
-  #  build: ./haproxy
-  #  restart: always
-  #  volumes:
-  #    - ~/Desktop/VR-EP1/haproxy/etc/default/haproxy:/etc/default/haproxy
-  #  ports:
-  #    - 9000:80
-  #  networks:
-  #    - network2
+      network3:
+        ipv4_address: 172.53.0.3
+  haproxy:
+    image: haproxy:1.7
+    restart: always
+    volumes:
+      - ~/Desktop/VR-EP1/haproxy/etc/haproxy:/usr/local/etc/haproxy
+    ports:
+      - 9000:80
+    networks:
+      network2:
+        ipv4_address: 172.52.0.4
 networks:
   network1:
     driver: bridge
+    ipam:
+     config:
+       - subnet: 172.51.0.0/16
+         gateway: 172.51.0.1
   network2:
     driver: bridge
+    ipam:
+     config:
+       - subnet: 172.52.0.0/16
+         gateway: 172.52.0.1
   network3:
     driver: bridge
+    ipam:
+     config:
+       - subnet: 172.53.0.0/16
+         gateway: 172.53.0.1

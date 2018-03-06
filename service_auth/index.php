@@ -10,22 +10,27 @@ foreach($full_output as $row){
   #Encontrar a interface correta
   $comp = substr($row, 0, 4);
   if(strcmp($comp, "eth0") == 0){
-    $found = true;
+    $found0 = true;
   }
-  if($found == true){
+  if(strcmp($comp, "eth1") == 0){
+    $found1 = true;
+  }
+  if($found0 == true || $found1 == true){
     $iter++;
   }
   if($iter == 2){
-    if(strcmp(substr($row, 29, 1),"3")==0){
-      $host = substr($row, 20, 9)."2";
+    if($found0 == true){
+      $hostDB = substr($row, 20, 9)."2";
+      $found0 = false;
     }
     else{
-      $host = substr($row, 20, 9)."3";
+      $ownHost = substr($row, 20, 10);
+      $found1 = false;
     }
-    break;
+    $iter = 0;
   }
 }
-$conn_string = "host=$host;port=5432;dbname=vr;user=vr;password=vr";
+$conn_string = "host=$hostDB;port=5432;dbname=vr;user=vr;password=vr";
 try{
   $conn = new PDO("pgsql:".$conn_string);
   if($conn !== false){
@@ -55,7 +60,8 @@ $vars = 'CREATE TABLE IF NOT EXISTS vars (
   userid integer NOT NULL UNIQUE
 );';
 
-$varsInit = 'INSERT INTO vars (tokenid, userid) VALUES (0,0) ON CONFLICT DO NOTHING;';
+$varsExist = 'SELECT * from vars;';
+$varsInit = 'INSERT INTO vars (tokenid, userid) VALUES (0,0);';
 
 $sql =  'CREATE TABLE IF NOT EXISTS test (
   id serial PRIMARY KEY,
@@ -68,11 +74,14 @@ if($r !== false){
   if($r !== false){
     $r = $conn->exec($vars);
     if($r !== false){
-      $r = $conn->query($varsInit);
-      if($r !== false){
-      }
-      else{
-        echo "Error creating initial values for vars table\n";
+      $r = $conn->query($varsExist);
+      if($r->rowCount()==0){
+        $r = $conn->query($varsInit);
+        if($r !== false){
+        }
+        else{
+          echo "Error creating initial values for vars table\n";
+        }
       }
     }
     else{
@@ -98,14 +107,14 @@ $r = null;
       <div class="avatar">
         <img src="https://digitalnomadsforum.com/styles/FLATBOOTS/theme/images/user4.png">
       </div>
-      <form action="sign.php" method="post" target="_blank">
+      <form action="<?php echo "http://$ownHost/sign.php";?>" method="post" target="_blank">
         <input name="username" type="text" placeholder="username" required>
         <div class="bar">
           <i></i>
         </div>
         <input name="password" type="password" placeholder="password" required>
         <button type="submit">Register</button>
-        <button type="submit" formaction="login.php">Login</button>
+        <button type="submit" formaction="<?php echo "http://$ownHost/login.php";?>">Login</button>
       </form>
     </div>
   </body>

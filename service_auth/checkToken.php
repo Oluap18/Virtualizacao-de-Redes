@@ -17,28 +17,15 @@ foreach($full_output as $row){
     $iter++;
   }
   if($iter == 2){
-    if(strcmp(substr($row, 29, 1),"4")==0){
-      if($found0 == true){
-        $hostDB = substr($row, 20, 9)."2";
-        $found0 = false;
-      }
-      else{
-        $hostPHP = substr($row, 20, 9)."2";
-        $found1 = false;
-      }
-      $iter = 0;
+    if($found0 == true){
+      $hostDB = substr($row, 20, 9)."2";
+      $found0 = false;
     }
     else{
-      if($found0 == true){
-        $hostDB = substr($row, 20, 9)."2";
-        $found0 = false;
-      }
-      else{
-        $hostPHP = substr($row, 20, 9)."2";
-        $found1 = false;
-      }
-      $iter = 0;
+      $hostPHP = substr($row, 20, 9)."3";
+      $found1 = false;
     }
+    $iter = 0;
   }
 }
 
@@ -53,24 +40,27 @@ try{
 
 $checkToken = 'SELECT userid FROM tokens WHERE tokenid = '.$_POST['token'].';';
 $r = $conn->query($checkToken);
-if($r->rowCount() !== 0){
-?>
-  <form action="<?php echo $sendMail; ?>" method="POST" target="_self">
-    <input type="text" required name="token" placeholder="Token" value = <?php echo $_POST['token'];?> >
-    <br>
-    <input type="email" required name="emailto" placeholder="Receivers e-mail" value = <?php echo $_POST['emailto']; ?>>
-    <br>
-    <input type="text" required name="subject" placeholder="Subject" value = <?php echo $_POST['subject']; ?>>
-    <br>
-    <textarea class="msgtext" required name="message" placeholder="Type your message here"><?php echo $_POST['message']; ?></textarea>
-    <br><br>
-    <button id="click-me">Send</button>
-  </form>
-  <script>document.getElementById("click-me").click();</script>
-<?php
+if($r!== false){
+  if($r->rowCount() !== 0){
+  ?>
+    <form action="<?php echo $sendMail; ?>" method="POST" target="_self">
+      <input type="email" required name="emailto" placeholder="Receivers e-mail" value = <?php echo $_POST['emailto']; ?>>
+      <br>
+      <input type="text" required name="subject" placeholder="Subject" value = <?php echo $_POST['subject']; ?>>
+      <br>
+      <textarea class="msgtext" required name="message" placeholder="Type your message here"><?php echo $_POST['message']; ?></textarea>
+      <br><br>
+      <button id="click-me">Send</button>
+    </form>
+    <script>document.getElementById("click-me").click();</script>
+  <?php
+  }
+  else{
+    #Inserir uma mensagem de error qualquer
+    echo "Token inválido\n";
+  }
 }
 else{
-  #Inserir uma mensagem de error qualquer
-  echo "Token inválido\n";
+  echo "Can't communicate with database in $hostDB\n";
 }
 ?>

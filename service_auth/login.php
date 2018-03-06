@@ -2,22 +2,22 @@
 #Get the ipaddress
 $iter = 0;
 $found = false;
-$last_line = exec('ip addr show', $full_output);
+$last_line = exec('ifconfig', $full_output);
 foreach($full_output as $row){
   #Encontrar a interface correta
-  $comp = substr($row, 4, 4);
+  $comp = substr($row, 0, 4);
   if(strcmp($comp, "eth0") == 0){
-    $found = true;
+    $found0 = true;
   }
-  if($found == true){
+  if($found0 == true){
     $iter++;
   }
-  if($iter == 3){
-    $host = substr($row, 9, 9)."2";
+  if($iter == 2){
+    $hostDB = substr($row, 20, 9)."2";
     break;
   }
 }
-$conn_string = "host=$host;port=5432;dbname=vr;user=vr;password=vr";
+$conn_string = "host=$hostDB;port=5432;dbname=vr;user=vr;password=vr";
 try{
   $conn = new PDO("pgsql:".$conn_string);
 }catch (PDOException $e){
@@ -42,13 +42,13 @@ if($r->rowCount() !== 0){
       $res = $conn->query($createToken);
       if($res !== false){
         $res = $conn->query($updateToken);
-        echo $token."\n";
+        echo "Token a ser utilizador no mail: $token\n";
       }
       else{
         $updateUser = 'UPDATE tokens SET tokenid = '.$token.' WHERE userid = '.$row['userid'].';';
         $res = $conn->query($updateUser);
         $res = $conn->query($updateToken);
-        echo $token."\n";
+        echo "Token a ser utilizador no mail: $token\n";
       }
     }
     else{
