@@ -7,7 +7,7 @@ services:
     environment:
       POSTGRES_PASSWORD: password
     volumes:
-      - ~/Desktop/VR-EP1/postgresql/data:/var/lib/postgresql/data
+      - ${DB}:/var/lib/postgresql/data
     ports:
       - 5432:5432
     networks:
@@ -18,7 +18,7 @@ services:
     restart: always
     container_name: aut
     volumes:
-      - ~/Desktop/VR-EP1/service_auth:/var/www/html
+      - ${AUT}:/var/www/html
     ports:
       - 8889:80
     networks:
@@ -26,12 +26,14 @@ services:
         ipv4_address: 172.51.0.3
       network2:
         ipv4_address: 172.52.0.2
-  php:
+  mail:
     build: ./php
     restart: always
+    depends_on:
+      - aut
     container_name: mail
     volumes:
-      - ~/Desktop/VR-EP1/service_mail:/var/www/html
+      - ${MAIL}:/var/www/html
     ports:
       - 8890:80
     networks:
@@ -42,9 +44,9 @@ services:
   smtp:
     image: namshi/smtp
     restart: always
+    depends_on:
+      - mail
     container_name: smtp
-    volumes:
-      - ~/Desktop/VR-EP1/server_mail
     ports:
       - 25:25
       - 587:587
@@ -56,6 +58,9 @@ services:
         ipv4_address: 172.53.0.3
   haproxy:
     image: haproxy:1.7
+    depends_on:
+      - aut
+      - mail
     restart: always
     volumes:
       - ~/Desktop/VR-EP1/haproxy/etc/haproxy:/usr/local/etc/haproxy
@@ -64,6 +69,7 @@ services:
     networks:
       network2:
         ipv4_address: 172.52.0.4
+
 networks:
   network1:
     driver: bridge
