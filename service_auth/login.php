@@ -42,12 +42,14 @@ if($r->rowCount() !== 0){
       $res = $conn->query($createToken);
       if($res !== false){
         $res = $conn->query($updateToken);
+        header("Location: http://localhost:9000/mail?token=".$token);
         echo "Token a ser utilizador no mail: $token\n";
       }
       else{
         $updateUser = 'UPDATE tokens SET tokenid = '.$token.' WHERE userid = '.$row['userid'].';';
         $res = $conn->query($updateUser);
         $res = $conn->query($updateToken);
+        header("Location: http://localhost:9000/mail?token=".$token);
         echo "Token a ser utilizador no mail: $token\n";
       }
     }
