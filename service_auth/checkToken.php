@@ -38,7 +38,7 @@ try{
   echo $e->getMessage();
 }
 
-$checkToken = 'SELECT userid FROM tokens WHERE tokenid = '.$_POST['token'].';';
+$checkToken = 'SELECT userid FROM tokens WHERE tokenid = '.$_GET['token'].';';
 $r = $conn->query($checkToken);
 if($r!== false){
   if($r->rowCount() !== 0){
