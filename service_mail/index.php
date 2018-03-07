@@ -19,8 +19,8 @@ foreach($full_output as $row){
     break;
   }
 }
-
-$token = 'http://'.$host.'/checkToken.php';
+$token_received = $_GET['token'];
+$token = 'http://'.$host.'/checkToken.php?token='.$token_received;
 ?>
 
 <html>
@@ -37,8 +37,6 @@ $token = 'http://'.$host.'/checkToken.php';
       </div>
       <br>
       <form action="<?php echo $token; ?>" method="POST">
-        <input type="text" required name="token" placeholder="Token">
-        <br>
         <input type="email" required name="emailto" placeholder="Receivers e-mail">
         <br>
         <input type="text" required name="subject" placeholder="Subject">
