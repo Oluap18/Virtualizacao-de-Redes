@@ -33,7 +33,7 @@ services:
       - aut
     container_name: mail
     volumes:
-      - ${MAIL}:/var/www/html
+      - ${MAILS}:/var/www/html
     ports:
       - 8890:80
     networks:
@@ -63,7 +63,7 @@ services:
       - mail
     restart: always
     volumes:
-      - ~/Desktop/VR-EP1/haproxy/etc/haproxy:/usr/local/etc/haproxy
+      - ./haproxy/etc/haproxy:/usr/local/etc/haproxy
     ports:
       - 9000:80
     networks:
