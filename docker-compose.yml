@@ -62,6 +62,7 @@ services:
       - aut
       - mail
     restart: always
+    container_name: haproxy
     volumes:
       - ./haproxy/etc/haproxy:/usr/local/etc/haproxy
     ports:
