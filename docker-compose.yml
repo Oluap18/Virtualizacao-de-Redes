@@ -49,10 +49,6 @@ services:
     container_name: smtp
     ports:
       - 25:25
-      - 587:587
-      - 2525:2525
-      - 465:465
-      - 25025:25025
     networks:
       network3:
         ipv4_address: 172.53.0.3
