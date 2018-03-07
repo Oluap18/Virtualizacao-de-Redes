@@ -60,7 +60,7 @@ services:
     restart: always
     container_name: haproxy
     volumes:
-      - ./haproxy/etc/haproxy:/usr/local/etc/haproxy
+      - ${HAPROXY}:/usr/local/etc/haproxy
     ports:
       - 9000:80
     networks:
