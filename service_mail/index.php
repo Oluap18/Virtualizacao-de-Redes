@@ -21,6 +21,9 @@ foreach($full_output as $row){
 }
 $token_received = $_GET['token'];
 $token = 'http://'.$host.'/checkToken.php?token='.$token_received;
+if ($token_received == NULL) {
+	echo "You need to login first!";		
+}
 ?>
 
 <html>
