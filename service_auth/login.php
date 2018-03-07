@@ -61,3 +61,17 @@ else{
 }
 
 ?>
+
+
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Login Token</title>
+    <link rel="stylesheet" href="http://172.52.0.2/css/reset.css">
+    <link rel="stylesheet" href="http://172.52.0.2/css/style.css" media="screen" type="text/css" />
+  </head>
+  <body>
+    <div class="wrap">
+    </div>
+  </body>
+</html>

@@ -99,8 +99,8 @@ $r = null;
   <head>
     <meta charset="UTF-8">
     <title>Auth Service</title>
-    <link rel="stylesheet" href="css/reset.css">
-    <link rel="stylesheet" href="css/style.css" media="screen" type="text/css" />
+    <link rel="stylesheet" href="http://172.52.0.2/css/reset.css">
+    <link rel="stylesheet" href="http://172.52.0.2/css/style.css" media="screen" type="text/css" />
   </head>
   <body>
     <div class="wrap">
@@ -113,7 +113,9 @@ $r = null;
           <i></i>
         </div>
         <input name="password" type="password" placeholder="password" required>
+        <br>
         <button type="submit">Register</button>
+        <br>
         <button type="submit" formaction="<?php echo "http://$ownHost/login.php";?>">Login</button>
       </form>
     </div>
