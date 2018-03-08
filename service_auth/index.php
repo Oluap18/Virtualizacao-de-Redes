@@ -2,35 +2,7 @@
 <html>
 
 <?php
-#Get the ipaddress
-$iter = 0;
-$found = false;
-$last_line = exec('ifconfig', $full_output);
-foreach($full_output as $row){
-  #Encontrar a interface correta
-  $comp = substr($row, 0, 4);
-  if(strcmp($comp, "eth0") == 0){
-    $found0 = true;
-  }
-  if(strcmp($comp, "eth1") == 0){
-    $found1 = true;
-  }
-  if($found0 == true || $found1 == true){
-    $iter++;
-  }
-  if($iter == 2){
-    if($found0 == true){
-      $hostDB = substr($row, 20, 9)."2";
-      $found0 = false;
-    }
-    else{
-      $ownHost = substr($row, 20, 10);
-      $found1 = false;
-    }
-    $iter = 0;
-  }
-}
-$conn_string = "host=$hostDB;port=5432;dbname=vr;user=vr;password=vr";
+$conn_string = "host=db;port=5432;dbname=vr;user=vr;password=vr";
 try{
   $conn = new PDO("pgsql:".$conn_string);
   if($conn !== false){
@@ -99,15 +71,15 @@ $r = null;
   <head>
     <meta charset="UTF-8">
     <title>Auth Service</title>
-    <link rel="stylesheet" href="http://172.52.0.2/css/reset.css">
-    <link rel="stylesheet" href="http://172.52.0.2/css/style.css" media="screen" type="text/css" />
+    <link rel="stylesheet" href="aut/css/reset.css">
+    <link rel="stylesheet" href="aut/css/style.css" media="screen" type="text/css" />
   </head>
   <body>
     <div class="wrap">
       <div class="avatar">
         <img src="https://digitalnomadsforum.com/styles/FLATBOOTS/theme/images/user4.png">
       </div>
-      <form action="<?php echo "http://$ownHost/sign.php";?>" method="post" target="_blank">
+      <form action="aut/sign.php" method="post" target="_blank">
         <input name="username" type="text" placeholder="username" required>
         <div class="bar">
           <i></i>
@@ -116,7 +88,7 @@ $r = null;
         <br>
         <button type="submit">Register</button>
         <br>
-        <button type="submit" formaction="<?php echo "http://$ownHost/login.php";?>">Login</button>
+        <button type="submit" formaction="aut/login.php">Login</button>
       </form>
     </div>
   </body>

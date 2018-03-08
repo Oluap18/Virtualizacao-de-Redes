@@ -2,8 +2,8 @@
   <head>
     <meta charset="UTF-8">
     <title>Mail Service</title>
-    <link rel="stylesheet" href="http://172.52.0.3/css/reset.css">
-    <link rel="stylesheet" href="http://172.52.0.3/css/style.css" media="screen" type="text/css" />
+    <link rel="stylesheet" href="/mail/css/reset.css">
+    <link rel="stylesheet" href="/mail/css/style.css" media="screen" type="text/css" />
   </head>
   <body>
     <div class="wrap">
