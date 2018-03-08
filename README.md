@@ -8,7 +8,10 @@ Para a sua criação, é necessário executar os seguintes passos após a criaç
 2. su - postgres
 3. psql
 4. CREATE DATABASE vr;
-5. alter user vr with encrypted password 'vr';
-6. grant all privileges on database vr to vr;
+5. Press CTRL+D
+6. psql vr;
+7. create user vr;
+7. alter user vr with encrypted password 'vr';
+8. grant all privileges on database vr to vr;
 
 Realizados estes passos, poderá usufruir da aplicação.

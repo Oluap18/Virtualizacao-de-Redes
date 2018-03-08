@@ -7,7 +7,7 @@ services:
     environment:
       POSTGRES_PASSWORD: password
     volumes:
-      - ${DB}:/var/lib/postgresql/data
+      - dbVol:/var/lib/postgresql/data
     ports:
       - 5432:5432
     networks:
@@ -18,7 +18,7 @@ services:
     restart: always
     container_name: aut
     volumes:
-      - ${AUT}:/var/www/html
+      - autVol:/var/www/html
     ports:
       - 8889:80
     networks:
@@ -33,7 +33,7 @@ services:
       - aut
     container_name: mail
     volumes:
-      - ${MAILS}:/var/www/html
+      - mailVol:/var/www/html
     ports:
       - 8890:80
     networks:
@@ -60,7 +60,7 @@ services:
     restart: always
     container_name: haproxy
     volumes:
-      - ${HAPROXY}:/usr/local/etc/haproxy
+      - haproxyVol:/usr/local/etc/haproxy
     ports:
       - 9000:80
     networks:
@@ -86,3 +86,25 @@ networks:
      config:
        - subnet: 172.53.0.0/16
          gateway: 172.53.0.1
+
+volumes:
+  dbVol:
+    driver_opts:
+      type: none
+      device: ${DB}
+      o: bind
+  haproxyVol:
+    driver_opts:
+      type: none
+      device: ${HAPROXY}
+      o: bind
+  mailVol:
+    driver_opts:
+      type: none
+      device: ${MAILS}
+      o: bind
+  autVol:
+    driver_opts:
+      type: none
+      device: ${AUT}
+      o: bind
