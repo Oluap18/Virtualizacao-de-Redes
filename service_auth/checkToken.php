@@ -12,7 +12,7 @@ $r = $conn->query($checkToken);
 if($r!== false){
   if($r->rowCount() !== 0){
   ?>
-    <form action="http://localhost:9000/mail/mail.php" method="POST">
+    <form action="/mail/mail.php" method="POST">
       <input type="email" required name="emailto" placeholder="Receivers e-mail" value = <?php echo $_POST['emailto']; ?>>
       <br>
       <input type="text" required name="subject" placeholder="Subject" value = <?php echo $_POST['subject']; ?>>

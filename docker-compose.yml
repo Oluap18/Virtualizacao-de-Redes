@@ -62,7 +62,8 @@ services:
     volumes:
       - haproxyVol:/usr/local/etc/haproxy
     ports:
-      - 9000:80
+      - 80:80
+      - 443:443
     networks:
       network2:
         ipv4_address: 172.52.0.4
@@ -91,20 +92,20 @@ volumes:
   dbVol:
     driver_opts:
       type: none
-      device: ${DB}
+      device: $PWD/postgresql/data
       o: bind
   haproxyVol:
     driver_opts:
       type: none
-      device: ${HAPROXY}
+      device: $PWD/haproxy/etc/haproxy
       o: bind
   mailVol:
     driver_opts:
       type: none
-      device: ${MAILS}
+      device: $PWD/service_mail
       o: bind
   autVol:
     driver_opts:
       type: none
-      device: ${AUT}
+      device: $PWD/service_auth
       o: bind
