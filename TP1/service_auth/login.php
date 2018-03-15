@@ -51,8 +51,8 @@ else{
   <head>
     <meta charset="UTF-8">
     <title>Login Token</title>
-    <link rel="stylesheet" href="http://localhost:9000/aut/css/reset.css">
-    <link rel="stylesheet" href="http://localhost:9000/aut/css/style.css" media="screen" type="text/css" />
+    <link rel="stylesheet" href="/aut/css/reset.css">
+    <link rel="stylesheet" href="/aut/css/style.css" media="screen" type="text/css" />
   </head>
   <body>
     <div class="wrap">
