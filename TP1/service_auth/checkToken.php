@@ -25,6 +25,14 @@ if($r!== false){
   <?php
   }
   else{
+    ?>
+    <head>
+      <meta charset="UTF-8">
+      <title>Mail Service</title>
+      <link rel="stylesheet" href="/aut/css/reset.css">
+      <link rel="stylesheet" href="/aut/css/style.css" media="screen" type="text/css" />
+    </head>
+    <?php
     #Inserir uma mensagem de error qualquer
     echo "Token inválido\n";
   }

@@ -11,8 +11,7 @@ services:
     ports:
       - 5432:5432
     networks:
-      network1:
-        ipv4_address: 172.51.0.2
+      - network1
   aut:
     build: ./php
     restart: always
@@ -22,10 +21,8 @@ services:
     ports:
       - 8889:80
     networks:
-      network1:
-        ipv4_address: 172.51.0.3
-      network2:
-        ipv4_address: 172.52.0.2
+      - network1
+      - network2
   mail:
     build: ./php
     restart: always
@@ -37,10 +34,8 @@ services:
     ports:
       - 8890:80
     networks:
-      network2:
-        ipv4_address: 172.52.0.3
-      network3:
-        ipv4_address: 172.53.0.2
+      - network2
+      - network3
   smtp:
     image: namshi/smtp
     restart: always
@@ -51,7 +46,6 @@ services:
       - 25:25
     networks:
       network3:
-        ipv4_address: 172.53.0.3
   haproxy:
     image: haproxy:1.7
     depends_on:
@@ -62,50 +56,37 @@ services:
     volumes:
       - haproxyVol:/usr/local/etc/haproxy
     ports:
-      - 80:80
+      - 8900:80
       - 443:443
     networks:
-      network2:
-        ipv4_address: 172.52.0.4
+      - network2
 
 networks:
   network1:
     driver: bridge
-    ipam:
-     config:
-       - subnet: 172.51.0.0/16
-         gateway: 172.51.0.1
   network2:
     driver: bridge
-    ipam:
-     config:
-       - subnet: 172.52.0.0/16
-         gateway: 172.52.0.1
   network3:
     driver: bridge
-    ipam:
-     config:
-       - subnet: 172.53.0.0/16
-         gateway: 172.53.0.1
 
 volumes:
   dbVol:
     driver_opts:
       type: none
-      device: $PWD/postgresql/data
+      device: ${DB}
       o: bind
   haproxyVol:
     driver_opts:
       type: none
-      device: $PWD/haproxy/etc/haproxy
+      device: ${HAPROXY}
       o: bind
   mailVol:
     driver_opts:
       type: none
-      device: $PWD/service_mail
+      device: ${MAIL}
       o: bind
   autVol:
     driver_opts:
       type: none
-      device: $PWD/service_auth
+      device: ${AUT}
       o: bind

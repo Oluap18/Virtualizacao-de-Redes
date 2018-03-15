@@ -57,7 +57,7 @@
         $mail->Port = 25;
         //Set who the message is to be sent from
         $mail->setFrom('mail@vr-g9.gcom.di.uminho.pt', 'Virt-Redes');
-        $mail->addReplyTo('jrsmiguel@outlook.pt', 'Admin');
+        $mail->addReplyTo('mail@vr-g9.com.di.uminho.pt', 'Admin');
 
         //Set who the message is to be sent to
         $mail->addAddress($mailto, explode('@', $mailto)[0]);
