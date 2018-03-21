@@ -15,7 +15,7 @@ services:
       - network1 
     privileged: true
     #Testa correr programa gráfico do container. Com o wireshark não funciona
-    command: "service openvswitch-switch start"
+    command: bash -c "service openvswitch-switch start && xmessage Container iniciado"
     environment:
      - DISPLAY
 
