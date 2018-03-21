@@ -1,14 +1,31 @@
-version: '3'
+version: '2'
 services:
-  mininet:
-    build:
-      context: .
-    image: iwaseyusuke/mininet
-    tty: true
-    network_mode: "bridge"
+  ubuntu_mini:
+    build: ./
+    restart: always
+    container_name: ubuntu_mininet
+    volumes:
+      - ubuntu_vol:/home/ubuntu
+      - /tmp/.X11-unix:/tmp/.X11-unix
+      - /lib/modules:/lib/modules
+    ports:
+      - 6653:6653
+      - 6633:6633
+    networks:
+      - network1 
     privileged: true
+    #Testa correr programa gráfico do container. Com o wireshark não funciona
+    command: "xmessage Container iniciado"
     environment:
      - DISPLAY
-    volumes:
-     - /tmp/.X11-unix:/tmp/.X11-unix
-     - /lib/modules:/lib/modules
+
+volumes:
+  ubuntu_vol:
+    driver_opts:
+      type: none
+      device: $PWD
+      o: bind
+
+networks:
+  network1:
+    driver: bridge
