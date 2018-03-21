@@ -1,17 +1,6 @@
-# VR-EP1
-Implementação de um serviço de autenticação e um serviço de email.
+Trabalho realizado na cadeira de mestrado de Redes, Virtualização de Redes.
 
-Antes de usar a aplicação criada, é necessária a criação da base de dados usada pela aplicação (vr), assim como o utilizador para realizar as operações na base de dados (vr).
-Para a sua criação, é necessário executar os seguintes passos após a criação do container da base de dados (através do docker-compose up, ou docker-compose run db).
-
-1. docker exec -it <name_of_db_container> /bin/bash
-2. su - postgres
-3. psql
-4. CREATE DATABASE vr;
-5. Press CTRL+D
-6. psql vr;
-7. create user vr;
-7. alter user vr with encrypted password 'vr';
-8. grant all privileges on database vr to vr;
-
-Realizados estes passos, poderá usufruir da aplicação.
+Membros do trabalho:
+  - [Paulo Guedes](https://github.com/Oluap18)
+  - [João Miguel](http://jrsmiguel.me/)
+  - [Bruno Ferreira](https://github.com/brunobcfum)
