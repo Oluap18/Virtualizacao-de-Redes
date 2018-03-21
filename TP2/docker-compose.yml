@@ -1,20 +1,14 @@
-version: '2'
+version: '3'
 services:
-  ubuntu_mini:
-    build: ./
-    restart: always
-    container_name: ubuntu_mininet
+  mininet:
+    build:
+      context: .
+    image: iwaseyusuke/mininet
+    tty: true
+    network_mode: "bridge"
+    privileged: true
     environment:
-      POSTGRES_PASSWORD: password
+     - DISPLAY
     volumes:
-      - ubuntu_vol:/home/ubuntu
-    ports:
-      - 6653:6653
-      - 6633:6633
-
-volumes:
-  ubuntu_vol:
-    driver_opts:
-      type: none
-      device: $HOME/
-      o: bind
+     - /tmp/.X11-unix:/tmp/.X11-unix
+     - /lib/modules:/lib/modules
