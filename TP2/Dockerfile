@@ -5,7 +5,6 @@ VOLUME /home/ubuntu
 WORKDIR /home/ubuntu
 RUN apt-get install -y mininet
 RUN apt-get install -y tcpdump
-RUN export DEBIAN_FRONTEND=noninteractive
-RUN apt-get install -y wireshark
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y wireshark
 EXPOSE 6653
 EXPOSE 6633
