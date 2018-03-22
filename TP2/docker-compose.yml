@@ -1,8 +1,9 @@
 version: '2'
 services:
   ubuntu_mini:
-    build: ./
-    restart: always
+    #build: ./
+    image: brunobcf/vrtp2
+    #restart: always
     container_name: ubuntu_mininet
     volumes:
       - ubuntu_vol:/home/ubuntu
@@ -14,10 +15,13 @@ services:
     networks:
       - network1 
     privileged: true
-    #Testa correr programa gráfico do container. Com o wireshark não funciona
-    command: bash -c "service openvswitch-switch start && xmessage Container iniciado"
     environment:
      - DISPLAY
+    #Testa correr programa gráfico do container. Se o X server do host usar OpenGL, os drivers da placa de video tem que ser instaladas também no container
+    #command: bash -c "service openvswitch-switch start && xmessage Container iniciado"
+    #command: bash -c "service openvswitch-switch start && wireshark"
+    command: bash -c "service openvswitch-switch start && tail -F /dev/null"
+    #O comando tail -F /dev/null serve apenas para fazer com que o container não termine após a execução do service start
 
 volumes:
   ubuntu_vol:
@@ -28,4 +32,4 @@ volumes:
 
 networks:
   network1:
-    driver: bridge
+driver: bridge
