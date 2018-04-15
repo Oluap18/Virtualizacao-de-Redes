@@ -17,6 +17,7 @@ class TP3( Topo ):
         self.addLink( host1, switch1 )
         self.addLink( host2, switch2 )
         self.addLink( host3, switch2 )
-
+        self.addLink( host2, switch2 )
+        self.addLink( host3, switch2 )
 
 topos = { 'tp3': ( lambda: TP3() ) }
