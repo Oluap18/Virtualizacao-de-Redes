@@ -14,17 +14,14 @@ import org.projectfloodlight.openflow.protocol.OFPacketIn;
 import org.projectfloodlight.openflow.types.OFPort;
 import org.projectfloodlight.openflow.protocol.OFPacketOut;
 import org.projectfloodlight.openflow.protocol.action.*;
-import org.projectfloodlight.openflow.types.EthType;
-import org.projectfloodlight.openflow.types.IPv4Address;
-import org.projectfloodlight.openflow.types.IpProtocol;
-import org.projectfloodlight.openflow.types.MacAddress;
-import org.projectfloodlight.openflow.types.TransportPort;
-import org.projectfloodlight.openflow.types.VlanVid;
-import org.projectfloodlight.openflow.types.ArpOpcode;
+import org.projectfloodlight.openflow.types.*;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import net.floodlightcontroller.packet.IPacket;
+import net.floodlightcontroller.statistics.StatisticsCollector;
+import net.floodlightcontroller.statistics.SwitchPortBandwidth;
 import net.floodlightcontroller.core.FloodlightContext;
 import net.floodlightcontroller.routing.ForwardingBase;
 import net.floodlightcontroller.core.IOFMessageListener;
@@ -33,11 +30,7 @@ import net.floodlightcontroller.core.module.FloodlightModuleContext;
 import net.floodlightcontroller.core.module.FloodlightModuleException;
 import net.floodlightcontroller.core.module.IFloodlightModule;
 import net.floodlightcontroller.core.module.IFloodlightService;
-import net.floodlightcontroller.packet.ARP;
-import net.floodlightcontroller.packet.Ethernet;
-import net.floodlightcontroller.packet.IPv4;
-import net.floodlightcontroller.packet.TCP;
-import net.floodlightcontroller.packet.UDP;
+import net.floodlightcontroller.packet.*;
 import net.floodlightcontroller.core.IFloodlightProviderService;
 
 public class MACTracker implements IOFMessageListener, IFloodlightModule {
@@ -45,7 +38,11 @@ public class MACTracker implements IOFMessageListener, IFloodlightModule {
   	protected IFloodlightProviderService floodlightProvider;
   	protected Set<Long> macAddresses;
   	protected static Logger logger;
-  	public int host = 0;
+	public int host = 0;
+	StatisticsCollector statistics = new StatisticsCollector();
+	SwitchPortBandwidth spb1;
+	SwitchPortBandwidth spb2;
+	long timebefore = 0;
 
   	@Override
   	public String getName() {
@@ -144,7 +141,7 @@ public class MACTracker implements IOFMessageListener, IFloodlightModule {
   	}
 
     /*
-  	 * Overridden IOFMessageListener's receive() function.
+  	 * Overridden IOFMessageListener's receive() function//
   	 */
   	@Override
   	public Command receive(IOFSwitch sw, OFMessage msg, FloodlightContext cntx){
@@ -157,12 +154,35 @@ public class MACTracker implements IOFMessageListener, IFloodlightModule {
   	        MacAddress srcMac = eth.getSourceMACAddress();
   	        MacAddress dstMac = eth.getDestinationMACAddress();
   	        VlanVid vlanId = VlanVid.ofVlan(eth.getVlanID());
-            if(sw.getId().getLong() == 1) System.out.println(sw.getId());
+            //if(sw.getId().getLong() == 1) System.out.println(sw.getId());
 
   	        /*
   	         * Check the ethertype of the Ethernet frame and retrieve the appropriate payload.
   	         * Note the shallow equality check. EthType caches and reuses instances for valid types.
   	         */
+			if ((System.currentTimeMillis()-timebefore)>10000) {
+
+				for (int i=1; i<48;i++){
+					spb1 = statistics.getBandwidthConsumption(DatapathId.of("00:00:00:00:00:00:00:01") , OFPort.of(i));
+					if (spb1 != null) {
+						logger.info("Current Link Speed {} KBps on switch 1", spb1.getLinkSpeedBitsPerSec().getValue()/8192);
+						logger.info("Current RX Bandwidth {} Bps on switch 1 port {}", spb1.getBitsPerSecondRx().getValue()/8,spb1.getSwitchPort().toString());
+						logger.info("Current TX Bandwidth {} Bps on switch 1 port {}", spb1.getBitsPerSecondTx().getValue()/8,spb1.getSwitchPort().toString());
+					} 
+
+				}
+				for (int i=1; i<48;i++){
+					spb2 = statistics.getBandwidthConsumption(DatapathId.of("00:00:00:00:00:00:00:02") , OFPort.of(i));
+					if (spb2 != null) {
+						logger.info("Current Link Speed {} KBps on switch 2", spb2.getLinkSpeedBitsPerSec().getValue()/8192);
+						logger.info("Current RX Bandwidth {} Bps on switch 2 port {}", spb2.getBitsPerSecondRx().getValue()/8,spb2.getSwitchPort().toString());
+						logger.info("Current TX Bandwidth {} Bps on switch 2 port {}", spb2.getBitsPerSecondTx().getValue()/8,spb2.getSwitchPort().toString());
+					} 
+
+				}
+
+				timebefore = System.currentTimeMillis();
+			} 
 
   	        if (eth.getEtherType() == EthType.IPv4) {
 
