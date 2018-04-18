@@ -6,9 +6,9 @@ class TP3( Topo ):
         Topo.__init__( self )
 
         # Add hosts and switches
-        host1 = self.addHost( 'h1' )
-        host2 = self.addHost( 'h2' )
-        host3 = self.addHost( 'h3' )
+        host1 = self.addHost( 'h1', ip='10.0.0.1', mac = '00:00:00:00:00:01' )
+        host2 = self.addHost( 'h2', ip='10.0.0.2', mac = '00:00:00:00:00:02' )
+        host3 = self.addHost( 'h3', ip='10.0.0.3', mac = '00:00:00:00:00:03' )
         switch1 = self.addSwitch( 's1' )
         switch2 = self.addSwitch( 's2' )
 
@@ -21,3 +21,4 @@ class TP3( Topo ):
         self.addLink( host3, switch2 )
 
 topos = { 'tp3': ( lambda: TP3() ) }
+ 
