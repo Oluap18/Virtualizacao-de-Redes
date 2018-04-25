@@ -45,6 +45,7 @@ public class MACTracker implements IOFMessageListener, IFloodlightModule {
   	SwitchPortBandwidth spb2;
   	long timebefore = 0;
     public List<MacAddress> macs = new ArrayList();
+    public Map<MacAddress, IPv4Address> ipMacs = new HashMap();
     public int teste = 0;
 
   	@Override
@@ -142,7 +143,7 @@ public class MACTracker implements IOFMessageListener, IFloodlightModule {
 
   	}
 
-    public void arpUpdate(OFMessage msg, FloodlightContext cntx){
+    public void anycastUpdate(OFMessage msg, FloodlightContext cntx){
         Ethernet eth = IFloodlightProviderService.bcStore.get(cntx, IFloodlightProviderService.CONTEXT_PI_PAYLOAD);
         MacAddress mac = eth.getSourceMACAddress();
         if(macs.contains(mac) != true){
@@ -206,6 +207,19 @@ public class MACTracker implements IOFMessageListener, IFloodlightModule {
 
   	}
 
+    public void updateArps(OFMessage msg, FloodlightContext cntx){
+
+      Ethernet eth = IFloodlightProviderService.bcStore.get(cntx, IFloodlightProviderService.CONTEXT_PI_PAYLOAD);
+      ARP arp = (ARP) eth.getPayload();
+      MacAddress mac = arp.getTargetHardwareAddress();
+      IPv4Address ip = arp.getTargetProtocolAddress();
+      if(ipMacs.containsKey(mac) != true) ipMacs.put(mac, ip);
+      for(MacAddress m : ipMacs.keySet()){
+        System.out.println("Mac: " + m + ".IP: " + ipMacs.get(m));
+      }
+
+    }
+
     /*
   	 * Overridden IOFMessageListener's receive() function//
   	 */
@@ -226,29 +240,29 @@ public class MACTracker implements IOFMessageListener, IFloodlightModule {
   	         * Check the ethertype of the Ethernet frame and retrieve the appropriate payload.
   	         * Note the shallow equality check. EthType caches and reuses instances for valid types.
   	         */
-			if ((System.currentTimeMillis()-timebefore)>10000) {
+      			if ((System.currentTimeMillis()-timebefore)>10000) {
 
-				for (int i=1; i<48;i++){
-					spb1 = statistics.getBandwidthConsumption(DatapathId.of("00:00:00:00:00:00:00:01") , OFPort.of(i));
-					if (spb1 != null) {
-						logger.info("Current Link Speed {} KBps on switch 1", spb1.getLinkSpeedBitsPerSec().getValue()/8192);
-						logger.info("Current RX Bandwidth {} Bps on switch 1 port {}", spb1.getBitsPerSecondRx().getValue()/8,spb1.getSwitchPort().toString());
-						logger.info("Current TX Bandwidth {} Bps on switch 1 port {}", spb1.getBitsPerSecondTx().getValue()/8,spb1.getSwitchPort().toString());
-					}
+      				for (int i=1; i<48;i++){
+      					spb1 = statistics.getBandwidthConsumption(DatapathId.of("00:00:00:00:00:00:00:01") , OFPort.of(i));
+      					if (spb1 != null) {
+      						logger.info("Current Link Speed {} KBps on switch 1", spb1.getLinkSpeedBitsPerSec().getValue()/8192);
+      						logger.info("Current RX Bandwidth {} Bps on switch 1 port {}", spb1.getBitsPerSecondRx().getValue()/8,spb1.getSwitchPort().toString());
+      						logger.info("Current TX Bandwidth {} Bps on switch 1 port {}", spb1.getBitsPerSecondTx().getValue()/8,spb1.getSwitchPort().toString());
+      					}
 
-				}
-				for (int i=1; i<48;i++){
-					spb2 = statistics.getBandwidthConsumption(DatapathId.of("00:00:00:00:00:00:00:02") , OFPort.of(i));
-					if (spb2 != null) {
-						logger.info("Current Link Speed {} KBps on switch 2", spb2.getLinkSpeedBitsPerSec().getValue()/8192);
-						logger.info("Current RX Bandwidth {} Bps on switch 2 port {}", spb2.getBitsPerSecondRx().getValue()/8,spb2.getSwitchPort().toString());
-						logger.info("Current TX Bandwidth {} Bps on switch 2 port {}", spb2.getBitsPerSecondTx().getValue()/8,spb2.getSwitchPort().toString());
-					}
+      				}
+      				for (int i=1; i<48;i++){
+      					spb2 = statistics.getBandwidthConsumption(DatapathId.of("00:00:00:00:00:00:00:02") , OFPort.of(i));
+      					if (spb2 != null) {
+      						logger.info("Current Link Speed {} KBps on switch 2", spb2.getLinkSpeedBitsPerSec().getValue()/8192);
+      						logger.info("Current RX Bandwidth {} Bps on switch 2 port {}", spb2.getBitsPerSecondRx().getValue()/8,spb2.getSwitchPort().toString());
+      						logger.info("Current TX Bandwidth {} Bps on switch 2 port {}", spb2.getBitsPerSecondTx().getValue()/8,spb2.getSwitchPort().toString());
+      					}
 
-				}
+      				}
 
-				timebefore = System.currentTimeMillis();
-			}
+      				timebefore = System.currentTimeMillis();
+      			}
 
   	        if (eth.getEtherType() == EthType.IPv4) {
 
@@ -272,52 +286,46 @@ public class MACTracker implements IOFMessageListener, IFloodlightModule {
   	             * Check the IP protocol version of the IPv4 packet's payload.
   	             */
   	            if (ipv4.getProtocol() == IpProtocol.TCP) {
-  	            	  if(sw.getId().getLong() == 1) System.out.println("TCP");
-  	                /* We got a TCP packet; get the payload from IPv4 */
-  	                TCP tcp = (TCP) ipv4.getPayload();
 
-  	                /* Various getters and setters are exposed in TCP */
-  	                TransportPort srcPort = tcp.getSourcePort();
-  	                TransportPort dstPort = tcp.getDestinationPort();
-  	                short flags = tcp.getFlags();
+                    if(sw.getId().getLong() == 1) System.out.println("TCP");
 
-  	                /* Your logic here! */
   	            } else if (ipv4.getProtocol() == IpProtocol.UDP) {
-  	            	  if(sw.getId().getLong() == 1) System.out.println("UDP");
-  	                /* We got a UDP packet; get the payload from IPv4 */
-  	                UDP udp = (UDP) ipv4.getPayload();
-
-  	                /* Various getters and setters are exposed in UDP */
-  	                TransportPort srcPort = udp.getSourcePort();
-  	                TransportPort dstPort = udp.getDestinationPort();
-
 
                     if(sw.getId().getLong() == 1){
+                      System.out.println("UDP");
                       packetout(sw, msg, cntx);
-                      System.out.println("Enviei");
                       return Command.STOP;
                     }
 
   	                /* Your logic here! */
   	            } else if(ipv4.getProtocol() == IpProtocol.ICMP){
-  	            	if(sw.getId().getLong() == 1) System.out.println("ICMP");
-  	            }
+
+                  if(sw.getId().getLong() == 1) System.out.println("ICMP");
+
+                }
 
   	        } else if (eth.getEtherType() == EthType.ARP) {
-  	        	  if(sw.getId().getLong() == 1) {
+
+                ARP arp = (ARP) eth.getPayload();
+
+                if(sw.getId().getLong() == 1) {
                   System.out.println("ARP");
   	        	    System.out.println("MAC source: " + srcMac + ". MAC destination: " + dstMac);
+                  String ip = arp.getSenderProtocolAddress() + "";
+                  if(ip.equals("10.0.0.1")){
+                      updateArps(msg, cntx);
+                  }
                 }
   	            /* We got an ARP packet; get the payload from Ethernet */
-  	            ARP arp = (ARP) eth.getPayload();
-                IPv4Address target = arp.getSenderProtocolAddress();
-                String str = target + "";
+
                 /*if(str.equals("10.0.0.250") && sw.getId().getLong() == 2){
                     arpout(sw, msg, cntx);
                     return Command.STOP;
                 }*/
+                IPv4Address sender = arp.getSenderProtocolAddress();
+                String str = sender + "";
                 if(str.equals("10.0.0.250") && sw.getId().getLong() == 2){
-                  arpUpdate(msg, cntx);
+                  anycastUpdate(msg, cntx);
                 }
 
 
