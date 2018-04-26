@@ -1,8 +1,8 @@
 # VRTP3
 Virtualização de redes - TP3
 
-
-sudo mn --controller=remote,ip=[floodlight IP],port=6653 --switch=ovsk,protocols=OpenFlow13 --custom customtopotp3.py --topo tp3
+chmod +777 customtoptp3.py
+sudo ./customtopotp3.py
 
 Para testar as estatisticas:
 Por exemplo do H1 para H2, espera-se fluxo em duas portas de S1 e em duas portas de S2
