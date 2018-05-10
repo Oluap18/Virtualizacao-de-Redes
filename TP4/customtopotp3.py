@@ -74,16 +74,16 @@ def run():
     fs1.cmd('ifconfig fs1-eth1 10.0.0.250 netmask 255.0.0.0')
     fs2.cmd('ifconfig fs2-eth1 10.0.0.250 netmask 255.0.0.0')
 
-    os.system('apt-get update')
-    os.system('apt-get install bind9 -y')
-    os.system('apt-get install samba -y')
+    print('\nChecking dependencies...\n')
+    os.system('apt-get update > /dev/null')
+    os.system('apt-get install bind9 -y > /dev/null')
+    os.system('apt-get install tftp-server -y > /dev/null')
+    os.system('apt-get install tftp -y > /dev/null')
+    os.system('/etc/init.d/bind9 start > /dev/null')
+    os.system('/etc/init.d/tftpd-hpa start > /dev/null')
 
     dns1.cmd('ifconfig dns1-eth1 10.0.0.240 netmask 255.0.0.0')
-    dns1.cmd('/etc/init.d/bind9 start')
-    dns1.cmd('service smbd start')
     dns2.cmd('ifconfig dns2-eth1 10.0.0.240 netmask 255.0.0.0')
-    dns2.cmd('/etc/init.d/bind9 start')
-    dns2.cmd('service smbd start')
 
     net.start()
     CLI(net)
