@@ -5,7 +5,7 @@ from mininet.net import Mininet
 from mininet.log import setLogLevel, info
 from mininet.node import RemoteController
 from mininet.cli import CLI
-import os
+import os, sys
 
 
 class TP3(Topo):
@@ -61,7 +61,7 @@ class TP3(Topo):
         self.addLink( s8, s9 )
 
 
-def run():
+def run(opt=0):
     c = RemoteController('c', '127.0.0.1', 6653)
     net = Mininet(topo=TP3(), host=CPULimitedHost, controller=None)
     net.addController(c)
@@ -74,16 +74,30 @@ def run():
     fs1.cmd('ifconfig fs1-eth1 10.0.0.250 netmask 255.0.0.0')
     fs2.cmd('ifconfig fs2-eth1 10.0.0.250 netmask 255.0.0.0')
 
-    print('\nChecking dependencies...\n')
-    os.system('apt-get update > /dev/null')
-    os.system('apt-get install bind9 -y > /dev/null')
-    os.system('apt-get install tftp-server -y > /dev/null')
-    os.system('apt-get install tftp -y > /dev/null')
-    os.system('/etc/init.d/bind9 start > /dev/null')
-    os.system('/etc/init.d/tftpd-hpa start > /dev/null')
+    if opt:
+        print('\nChecking dependencies...\n')
+        os.system('apt-get update')
+        os.system('apt-get install bind9 -y')
+        os.system('apt-get install atftpd -y')
+        os.system('apt-get install atftp -y')
+        os.system('/etc/init.d/bind9 start')
+    else:
+        print('\nChecking dependencies...\n')
+        os.system('apt-get update > /dev/null')
+        os.system('apt-get install bind9 -y > /dev/null')
+        os.system('apt-get install atftpd -y > /dev/null')
+        os.system('apt-get install atftp -y > /dev/null')
+        os.system('/etc/init.d/bind9 start > /dev/null')
 
     dns1.cmd('ifconfig dns1-eth1 10.0.0.240 netmask 255.0.0.0')
     dns2.cmd('ifconfig dns2-eth1 10.0.0.240 netmask 255.0.0.0')
+
+    fs1.cmd('chown -R 1000:1000 /tftpboot')
+    fs1.cmd('chmod 777 /tftpboot')
+
+    fs2.cmd('chown -R 1000:1000 /tftpboot')
+    fs2.cmd('chmod 777 /tftpboot')
+
 
     net.start()
     CLI(net)
@@ -92,5 +106,9 @@ def run():
 
 if __name__ == '__main__':
     setLogLevel('info')
-    run()
+    if len(sys.argv) > 1:
+        if sys.argv[1] == '-v':
+            run(1)
+    else:
+        run()
     os.system("sudo mn -c")
