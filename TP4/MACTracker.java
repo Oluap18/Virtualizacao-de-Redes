@@ -50,6 +50,9 @@ public class MACTracker implements IOFMessageListener, IFloodlightModule {
     public List<IOFSwitch> sws = new ArrayList();
     public List<Ethernet> eths = new ArrayList();
     public List<IPv4Address> ips = new ArrayList();
+    //Guardar o iddle time dos CPUs dos file servers
+    public Double fs1 = 0.0;
+    public Double fs2 = 0.0;
 
   	@Override
   	public String getName() {
@@ -140,7 +143,7 @@ public class MACTracker implements IOFMessageListener, IFloodlightModule {
 
   	}
 
-    public void arpReply(IOFSwitch sw, Ethernet eth, int host, ARP arp){
+    public void arpReply(IOFSwitch sw, Ethernet eth, IPv4Address target, ARP arp){
         IPv4Address ip = arp.getSenderProtocolAddress();
     		Ethernet l2 = new Ethernet();
     		l2.setSourceMACAddress(MacAddress.of("76:f0:f0:f0:f0:f0"));
@@ -157,7 +160,7 @@ public class MACTracker implements IOFMessageListener, IFloodlightModule {
         l3.setOpCode(ARP.OP_REPLY);
         l3.setSenderHardwareAddress(MacAddress.of(Ethernet.toMACAddress("ff:ff:ff:ff:ff:ff")));
         l3.setTargetHardwareAddress(ipMacs.get(ip));
-    		l3.setSenderProtocolAddress(IPv4Address.of("10.0.0." + host));
+    		l3.setSenderProtocolAddress(target);
     		l3.setTargetProtocolAddress(ip);
     		l3.setProtocolType(arp.getProtocolType());
         l2.setPayload(l3);
@@ -283,10 +286,10 @@ public class MACTracker implements IOFMessageListener, IFloodlightModule {
           VlanVid vlanId = VlanVid.ofVlan(eth.getVlanID());
           //if(sw.getId().getLong() == 1) System.out.println(sw.getId());
 
-          System.out.println("######################################");
-          System.out.println("Switch " + sw.getId().getLong());
-
           if (eth.getEtherType() == EthType.IPv4) {
+
+              System.out.println("######################################");
+              System.out.println("Switch " + sw.getId().getLong());
 
               /* We got an IPv4 packet; get the payload from Ethernet */
               IPv4 ipv4 = (IPv4) eth.getPayload();
@@ -315,17 +318,21 @@ public class MACTracker implements IOFMessageListener, IFloodlightModule {
 
               }
 
+              System.out.println("######################################");
+
           } else if (eth.getEtherType() == EthType.ARP) {
+
+              System.out.println("######################################");
+              System.out.println("Switch " + sw.getId().getLong());
 
               ARP arp = (ARP) eth.getPayload();
               System.out.println("Protocolo ARP");
               System.out.println("MAC source: " + srcMac);
               System.out.println("MAC destination: " + dstMac);
 
-          } else {
-              System.out.println("Unhandled ethertype");
+              System.out.println("######################################");
+
           }
-          System.out.println("######################################");
           break;
       default:
           break;
@@ -349,16 +356,72 @@ public class MACTracker implements IOFMessageListener, IFloodlightModule {
 
                 if (ipv4.getProtocol() == IpProtocol.UDP) {
 
-                    if((sw.getId().getLong() == 2 && dest.equals("10.0.0.240")){
-                        if(source.equals("10.0.0.1")){
-                            host++;
-                            host = host % 2;
-                            IPv4Address ipv = IPv4Address.of("10.0.0." + (host+5));
-                            packetout(sw, eth, ipv);
+                    if(sw.getId().getLong() == 2){
+                        //Distribuir pelos dns
+                        if(dest.equals("10.0.0.240")){
+                            if(source.equals("10.0.0.1")){
+                                host++;
+                                host = host % 2;
+                                IPv4Address ipv = IPv4Address.of("10.0.0." + (host+5));
+                                packetout(sw, eth, ipv);
+                            }
+                            if(source.equals("10.0.0.2")){
+                                IPv4Address ipv = IPv4Address.of("10.0.0.5");
+                                packetout(sw, eth, ipv);
+                            }
                         }
-                        if(source.equals("10.0.0.2")){
-                            IPv4Address ipv = IPv4Address.of("10.0.0.5");
-                            packetout(sw, eth, ipv);
+                        //Distribuir pelos fileservers
+                        else if(dest.equals("10.0.0.254")){
+                            //Falta a largura de banda
+                            if(fs1 >= fs2){
+                                IPv4Address ipv = IPv4Address.of("10.0.0.3");
+                                packetout(sw, eth, ipv);
+                            }
+                            else{
+                                IPv4Address ipv = IPv4Address.of("10.0.0.4");
+                                packetout(sw, eth, ipv);
+                            }
+                        }
+                    }
+                    //Calcular os iddleTime dos cpus
+                    if(sw.getId().getLong() == 1 && dest.equals("10.0.0.254")){
+                        Data data = (Data) ipv4.getPayload().getPayload();
+                        String cpu = new String(data.getData());
+                        cpu = cpu.replace(',', '.');
+                        if(source.equals("10.0.0.3")){
+                            fs1 = new Double(cpu);
+                        }
+                        else if(source.equals("10.0.0.4")){
+                            fs2 = new Double(cpu);
+                        }
+                    }
+                    if(source.equals("10.0.0.3")){
+                        Data data = (Data) ipv4.getPayload().getPayload();
+                        String ficheiro = new String(data.getData());
+                        System.out.println("Ficheiro vindo de fileserver 1");
+                        System.out.println(ficheiro)
+                        if(ficheiro.substring(0, 3).equals("0: ")){
+                          System.out.println(ficheiro.substring(3, ficheiro.length()-1));
+                        }
+                        else if(ficheiro.substring(0, 3).equals("1: ")){
+                          System.out.println("Ficheiro não existe");
+                        }
+                        else if(ficheiro.substring(0, 3).equals("2: ")){
+                          System.out.println("Ficheiro demasiado grande. Tamanho terá de ter 60 kB no máximo.");
+                        }
+                    }
+                    if(source.equals("10.0.0.4")){
+                        Data data = (Data) ipv4.getPayload().getPayload();
+                        String ficheiro = new String(data.getData());
+                        System.out.println("Ficheiro vindo de fileserver 2");
+                        if(ficheiro.substring(0, 3).equals("0: ")){
+                          System.out.println(ficheiro.substring(3, ficheiro.length()-1));
+                        }
+                        else if(ficheiro.substring(0, 3).equals("1: ")){
+                          System.out.println("Ficheiro não existe");
+                        }
+                        else if(ficheiro.substring(0, 3).equals("2: ")){
+                          System.out.println("Ficheiro demasiado grande. Tamanho terá de ter 60 kB no máximo.");
                         }
                     }
                 }
@@ -369,22 +432,56 @@ public class MACTracker implements IOFMessageListener, IFloodlightModule {
                 //Guardar os ips associados a cada MAC
                 updateArps(arp);
                 IPv4Address target = arp.getTargetProtocolAddress();
+                String sender = "" + arp.getSenderProtocolAddress();
                 String str = "" + target;
 
-                //Responder ao pedido de ARP, com um MAC não atribuido a ninguém
-                if(str.equals("10.0.0.250") && (sw.getId().getLong() == 2 || sw.getId().getLong() == 9)){
-                    arpAsk(sw, eth, arp, 5);
-                    arpAsk(sw, eth, arp, 6);
-                    arpReply(sw, eth, 250, arp);
+                if(sender.equals("10.0.0.1") && sw.getId().getLong() == 2){
+
+                    if(str.equals("10.0.0.250")){
+                        //Saber os Macs dos fs
+                        arpAsk(sw, eth, arp, 3);
+                        arpAsk(sw, eth, arp, 4);
+                        //atribuir mac broadcast a ip anycast
+                        arpReply(sw, eth, target, arp);
+                    }
+                    else if(str.equals("10.0.0.240")){
+                        //Saber os Macs dos dns
+                        arpAsk(sw, eth, arp, 5);
+                        arpAsk(sw, eth, arp, 6);
+                        //atribuir mac broadcast a ip anycast
+                        arpReply(sw, eth, target, arp);
+                    }
+
                 }
-                if(str.equals("10.0.0.240") && (sw.getId().getLong() == 2 || sw.getId().getLong() == 9)){
-                    arpAsk(sw, eth, arp, 5);
-                    arpAsk(sw, eth, arp, 6);
-                    arpReply(sw, eth, 240, arp);
+
+                else if(sender.equals("10.0.0.2") && sw.getId().getLong() == 9){
+
+                    if(str.equals("10.0.0.250")){
+                        //Saber os Macs dos fs
+                        arpAsk(sw, eth, arp, 3);
+                        arpAsk(sw, eth, arp, 4);
+                        //atribuir mac broadcast a ip anycast
+                        arpReply(sw, eth, target, arp);
+                    }
+                    else if(str.equals("10.0.0.240")){
+                        //Saber os Macs dos dns
+                        arpAsk(sw, eth, arp, 5);
+                        arpAsk(sw, eth, arp, 6);
+                        //atribuir mac broadcast a ip anycast
+                        arpReply(sw, eth, target, arp);
+                    }
+
+                }
+
+                else if((sender.equals("10.0.0.3") || sender.equals("10.0.0.4")) && sw.getId().getLong() == 1){
+
+                  //atribuir mac broadcast a ip anycast
+                  arpReply(sw, eth, target, arp);
+
                 }
 
                 //Guardar os MACs associados a cada ip anycast
-                if(str.equals("10.0.0.250") && sw.getId().getLong() == 2){
+                if((str.equals("10.0.0.250") || str.equals("10.0.0.240")) && sw.getId().getLong() == 2){
                     anycastUpdate(arp);
                 }
 
