@@ -188,14 +188,14 @@ public class MACTracker implements IOFMessageListener, IFloodlightModule {
         if(anycast.containsKey(target) == false){
             List<MacAddress> lista = new ArrayList();
             lista.add(mac);
-            System.out.println("New target" + target + ": " + mac);
+            //System.out.println("New target" + target + ": " + mac);
             anycast.put(target, lista);
         }
         else{
             List<MacAddress> lista = anycast.get(target);
             if(lista.contains(mac) != true){
                 lista.add(mac);
-                System.out.println("" + mac);
+                //System.out.println("" + mac);
             }
         }
     }
@@ -206,7 +206,7 @@ public class MACTracker implements IOFMessageListener, IFloodlightModule {
         UDP udp = (UDP) ipv4.getPayload();
         Data data = (Data) udp.getPayload();
         if(ipMacs.containsKey(ip) == false){
-            System.out.println("Não tem ip");
+            //System.out.println("Não tem ip");
             ips.add(ip);
             sws.add(sw);
             eths.add(eth);
@@ -259,7 +259,7 @@ public class MACTracker implements IOFMessageListener, IFloodlightModule {
           ipMacs.put(ip, mac);
           int index = ips.indexOf(ip);
           while(index != -1){
-            System.out.println("Já tenho." + index);
+            //System.out.println("Já tenho." + index);
             packetout(sws.get(index), eths.get(index), ips.get(index));
             ips.remove(index);
             eths.remove(index);
@@ -349,85 +349,7 @@ public class MACTracker implements IOFMessageListener, IFloodlightModule {
             Ethernet eth = IFloodlightProviderService.bcStore.get(cntx, IFloodlightProviderService.CONTEXT_PI_PAYLOAD);
             //printDetails(sw, msg, cntx, eth);
 
-            if (eth.getEtherType() == EthType.IPv4) {
-                IPv4 ipv4 = (IPv4) eth.getPayload();
-                String source = "" + ipv4.getSourceAddress();
-                String dest = "" + ipv4.getDestinationAddress();
-
-                if (ipv4.getProtocol() == IpProtocol.UDP) {
-
-                    if(sw.getId().getLong() == 2){
-                        //Distribuir pelos dns
-                        if(dest.equals("10.0.0.240")){
-                            if(source.equals("10.0.0.1")){
-                                host++;
-                                host = host % 2;
-                                IPv4Address ipv = IPv4Address.of("10.0.0." + (host+5));
-                                packetout(sw, eth, ipv);
-                            }
-                            if(source.equals("10.0.0.2")){
-                                IPv4Address ipv = IPv4Address.of("10.0.0.5");
-                                packetout(sw, eth, ipv);
-                            }
-                        }
-                        //Distribuir pelos fileservers
-                        else if(dest.equals("10.0.0.254")){
-                            //Falta a largura de banda
-                            if(fs1 >= fs2){
-                                IPv4Address ipv = IPv4Address.of("10.0.0.3");
-                                packetout(sw, eth, ipv);
-                            }
-                            else{
-                                IPv4Address ipv = IPv4Address.of("10.0.0.4");
-                                packetout(sw, eth, ipv);
-                            }
-                        }
-                    }
-                    //Calcular os iddleTime dos cpus
-                    if(sw.getId().getLong() == 1 && dest.equals("10.0.0.254")){
-                        Data data = (Data) ipv4.getPayload().getPayload();
-                        String cpu = new String(data.getData());
-                        cpu = cpu.replace(',', '.');
-                        if(source.equals("10.0.0.3")){
-                            fs1 = new Double(cpu);
-                        }
-                        else if(source.equals("10.0.0.4")){
-                            fs2 = new Double(cpu);
-                        }
-                    }
-                    if(source.equals("10.0.0.3")){
-                        Data data = (Data) ipv4.getPayload().getPayload();
-                        String ficheiro = new String(data.getData());
-                        System.out.println("Ficheiro vindo de fileserver 1");
-                        System.out.println(ficheiro)
-                        if(ficheiro.substring(0, 3).equals("0: ")){
-                          System.out.println(ficheiro.substring(3, ficheiro.length()-1));
-                        }
-                        else if(ficheiro.substring(0, 3).equals("1: ")){
-                          System.out.println("Ficheiro não existe");
-                        }
-                        else if(ficheiro.substring(0, 3).equals("2: ")){
-                          System.out.println("Ficheiro demasiado grande. Tamanho terá de ter 60 kB no máximo.");
-                        }
-                    }
-                    if(source.equals("10.0.0.4")){
-                        Data data = (Data) ipv4.getPayload().getPayload();
-                        String ficheiro = new String(data.getData());
-                        System.out.println("Ficheiro vindo de fileserver 2");
-                        if(ficheiro.substring(0, 3).equals("0: ")){
-                          System.out.println(ficheiro.substring(3, ficheiro.length()-1));
-                        }
-                        else if(ficheiro.substring(0, 3).equals("1: ")){
-                          System.out.println("Ficheiro não existe");
-                        }
-                        else if(ficheiro.substring(0, 3).equals("2: ")){
-                          System.out.println("Ficheiro demasiado grande. Tamanho terá de ter 60 kB no máximo.");
-                        }
-                    }
-                }
-            }
-
-            else if(eth.getEtherType() == EthType.ARP){
+            if(eth.getEtherType() == EthType.ARP){
                 ARP arp = (ARP) eth.getPayload();
                 //Guardar os ips associados a cada MAC
                 updateArps(arp);
@@ -438,18 +360,18 @@ public class MACTracker implements IOFMessageListener, IFloodlightModule {
                 if(sender.equals("10.0.0.1") && sw.getId().getLong() == 2){
 
                     if(str.equals("10.0.0.250")){
+                        //atribuir mac broadcast a ip anycast
+                        arpReply(sw, eth, target, arp);
                         //Saber os Macs dos fs
                         arpAsk(sw, eth, arp, 3);
                         arpAsk(sw, eth, arp, 4);
-                        //atribuir mac broadcast a ip anycast
-                        arpReply(sw, eth, target, arp);
                     }
                     else if(str.equals("10.0.0.240")){
+                        //atribuir mac broadcast a ip anycast
+                        arpReply(sw, eth, target, arp);
                         //Saber os Macs dos dns
                         arpAsk(sw, eth, arp, 5);
                         arpAsk(sw, eth, arp, 6);
-                        //atribuir mac broadcast a ip anycast
-                        arpReply(sw, eth, target, arp);
                     }
 
                 }
@@ -486,6 +408,82 @@ public class MACTracker implements IOFMessageListener, IFloodlightModule {
                 }
 
 
+            }
+            else if (eth.getEtherType() == EthType.IPv4) {
+                IPv4 ipv4 = (IPv4) eth.getPayload();
+                String source = "" + ipv4.getSourceAddress();
+                String dest = "" + ipv4.getDestinationAddress();
+
+                if (ipv4.getProtocol() == IpProtocol.UDP) {
+
+                    if(sw.getId().getLong() == 2){
+                        //Distribuir pelos dns
+                        if(dest.equals("10.0.0.240")){
+                            if(source.equals("10.0.0.1")){
+                                host++;
+                                host = host % 2;
+                                IPv4Address ipv = IPv4Address.of("10.0.0." + (host+5));
+                                packetout(sw, eth, ipv);
+                            }
+                            if(source.equals("10.0.0.2")){
+                                IPv4Address ipv = IPv4Address.of("10.0.0.5");
+                                packetout(sw, eth, ipv);
+                            }
+                        }
+                        //Distribuir pelos fileservers
+                        else if(dest.equals("10.0.0.250")){
+                            //Falta a largura de banda
+                            if(fs1 >= fs2){
+                                IPv4Address ipv = IPv4Address.of("10.0.0.3");
+                                packetout(sw, eth, ipv);
+                            }
+                            else{
+                                IPv4Address ipv = IPv4Address.of("10.0.0.4");
+                                packetout(sw, eth, ipv);
+                            }
+                        }
+                    }
+                    //Calcular os iddleTime dos cpus
+                    if(sw.getId().getLong() == 1 && dest.equals("10.0.0.254")){
+                        Data data = (Data) ipv4.getPayload().getPayload();
+                        String cpu = new String(data.getData());
+                        cpu = cpu.replace(',', '.');
+                        if(source.equals("10.0.0.3")){
+                            fs1 = new Double(cpu);
+                        }
+                        else if(source.equals("10.0.0.4")){
+                            fs2 = new Double(cpu);
+                        }
+                    }
+                    if(source.equals("10.0.0.3") && sw.getId().getLong() == 1){
+                        Data data = (Data) ipv4.getPayload().getPayload();
+                        String ficheiro = new String(data.getData());
+                        System.out.println("Ficheiro vindo de fileserver 1");
+                        if(ficheiro.substring(0, 3).equals("0: ")){
+                          System.out.println(ficheiro.substring(3, ficheiro.length()));
+                        }
+                        else if(ficheiro.substring(0, 3).equals("1: ")){
+                          System.out.println("Ficheiro não existe");
+                        }
+                        else if(ficheiro.substring(0, 3).equals("2: ")){
+                          System.out.println("Ficheiro demasiado grande. Tamanho terá de ter 60 kB no máximo.");
+                        }
+                    }
+                    if(source.equals("10.0.0.4") && sw.getId().getLong() == 1){
+                        Data data = (Data) ipv4.getPayload().getPayload();
+                        String ficheiro = new String(data.getData());
+                        System.out.println("Ficheiro vindo de fileserver 2");
+                        if(ficheiro.substring(0, 3).equals("0: ")){
+                          System.out.println(ficheiro.substring(3, ficheiro.length()));
+                        }
+                        else if(ficheiro.substring(0, 3).equals("1: ")){
+                          System.out.println("Ficheiro não existe");
+                        }
+                        else if(ficheiro.substring(0, 3).equals("2: ")){
+                          System.out.println("Ficheiro demasiado grande. Tamanho terá de ter 60 kB no máximo.");
+                        }
+                    }
+                }
             }
   	        break;
   	    default:

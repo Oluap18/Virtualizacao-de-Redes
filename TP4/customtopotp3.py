@@ -95,12 +95,12 @@ def run(opt=0):
     #fs1.cmd('chown -R 1000:1000 /tftpboot')
     #fs1.cmd('chmod 777 /tftpboot')
     fs1.cmd('cd fs1')
-    fs1.cmd('xterm -hold -e ../tftpserver.py -v &')
+    fs1.cmd('../tftpserver.py -v &')
 
     #fs2.cmd('chown -R 1000:1000 /tftpboot')
     #fs2.cmd('chmod 777 /tftpboot')
     fs2.cmd('cd fs2')
-    fs2.cmd('xterm -hold -e ../tftpserver.py -v &')
+    fs2.cmd('../tftpserver.py -v &')
 
     net.start()
     CLI(net)
