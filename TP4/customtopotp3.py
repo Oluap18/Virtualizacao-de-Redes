@@ -15,12 +15,12 @@ class TP3(Topo):
         super(TP3, self).__init__(**opts)
 
         # Add hosts and switches
-        h1 = self.addHost( 'h1' )
-        h2 = self.addHost( 'h2' )
-        fs1 = self.addHost( 'fs1' )
-        fs2 = self.addHost( 'fs2' )
-        dns1 = self.addHost( 'dns1' )
-        dns2 = self.addHost( 'dns2' )
+        h1 = self.addHost( 'h1' , ip='10.0.0.1' )
+        h2 = self.addHost( 'h2' , ip='10.0.0.2' )
+        fs1 = self.addHost( 'fs1', ip='10.0.0.3' )
+        fs2 = self.addHost( 'fs2', ip='10.0.0.4' )
+        dns1 = self.addHost( 'dns1', ip='10.0.0.5' )
+        dns2 = self.addHost( 'dns2', ip='10.0.0.6' )
 
 
         # Adding switches

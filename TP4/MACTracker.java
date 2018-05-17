@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.Set;
+import java.lang.Thread;
 
 import org.projectfloodlight.openflow.protocol.OFMessage;
 import org.projectfloodlight.openflow.protocol.OFType;
@@ -43,10 +44,12 @@ public class MACTracker implements IOFMessageListener, IFloodlightModule {
   	StatisticsCollector statistics = new StatisticsCollector();
   	SwitchPortBandwidth spb1;
   	SwitchPortBandwidth spb2;
-  	long timebefore = 0;
-    public List<MacAddress> macs = new ArrayList();
-    public Map<MacAddress, IPv4Address> ipMacs = new HashMap();
-    public int teste = 0;
+    public Map<IPv4Address, List<MacAddress>> anycast = new HashMap();
+    public Map<IPv4Address, MacAddress> ipMacs = new HashMap();
+    //Guarda as informações dos pacotes a enviar, quando souber os ips e MACs dos destinos
+    public List<IOFSwitch> sws = new ArrayList();
+    public List<Ethernet> eths = new ArrayList();
+    public List<IPv4Address> ips = new ArrayList();
 
   	@Override
   	public String getName() {
@@ -98,17 +101,11 @@ public class MACTracker implements IOFMessageListener, IFloodlightModule {
         floodlightProvider.addOFMessageListener(OFType.PACKET_IN, this);
   	}
 
-
-  	public void arpout(IOFSwitch sw, OFMessage msg, FloodlightContext cntx){
-        Ethernet eth = IFloodlightProviderService.bcStore.get(cntx, IFloodlightProviderService.CONTEXT_PI_PAYLOAD);
-    		ARP arp = (ARP) eth.getPayload();
-
-    		host++;
-    		host %= 2;
-    		int hostfinal = host + 2;
+    public void arpAsk(IOFSwitch sw, Ethernet eth, ARP arp, int hostfinal){
+        IPv4Address ip = arp.getSenderProtocolAddress();
     		Ethernet l2 = new Ethernet();
-    		l2.setSourceMACAddress(MacAddress.of("00:00:00:00:00:0" + hostfinal));
-    		l2.setDestinationMACAddress(MacAddress.of("00:00:00:00:00:01"));
+    		l2.setSourceMACAddress(ipMacs.get(ip));
+    		l2.setDestinationMACAddress(MacAddress.of("ff:ff:ff:ff:ff:ff"));
         l2.setPriorityCode(eth.getPriorityCode());
     		l2.setEtherType(eth.getEtherType());
 
@@ -118,11 +115,11 @@ public class MACTracker implements IOFMessageListener, IFloodlightModule {
         l3.setProtocolType(ARP.PROTO_TYPE_IP);
         l3.setHardwareAddressLength((byte) 6);
         l3.setProtocolAddressLength((byte) 4);
-        l3.setOpCode(ARP.OP_REPLY);
-        l3.setSenderHardwareAddress(MacAddress.of(Ethernet.toMACAddress("00:00:00:00:00:0" + hostfinal)));
-        l3.setTargetHardwareAddress(MacAddress.of(Ethernet.toMACAddress("00:00:00:00:00:01")));
-    		l3.setSenderProtocolAddress(IPv4Address.of("10.0.0.250"));
-    		l3.setTargetProtocolAddress(IPv4Address.of("10.0.0.1"));
+        l3.setOpCode(ARP.OP_REQUEST);
+        l3.setSenderHardwareAddress(ipMacs.get(ip));
+        l3.setTargetHardwareAddress(MacAddress.of(Ethernet.toMACAddress("00:00:00:00:00:00")));
+    		l3.setSenderProtocolAddress(ip);
+    		l3.setTargetProtocolAddress(IPv4Address.of("10.0.0." + hostfinal));
     		l3.setProtocolType(arp.getProtocolType());
         l2.setPayload(l3);
 
@@ -143,33 +140,79 @@ public class MACTracker implements IOFMessageListener, IFloodlightModule {
 
   	}
 
-    public void anycastUpdate(OFMessage msg, FloodlightContext cntx){
-        Ethernet eth = IFloodlightProviderService.bcStore.get(cntx, IFloodlightProviderService.CONTEXT_PI_PAYLOAD);
-        MacAddress mac = eth.getSourceMACAddress();
-        if(macs.contains(mac) != true){
-            macs.add(mac);
-            for(MacAddress m : macs){
-              System.out.println("Mac: " + m);
+    public void arpReply(IOFSwitch sw, Ethernet eth, int host, ARP arp){
+        IPv4Address ip = arp.getSenderProtocolAddress();
+    		Ethernet l2 = new Ethernet();
+    		l2.setSourceMACAddress(MacAddress.of("76:f0:f0:f0:f0:f0"));
+    		l2.setDestinationMACAddress(ipMacs.get(ip));
+        l2.setPriorityCode(eth.getPriorityCode());
+    		l2.setEtherType(eth.getEtherType());
+
+
+    		ARP l3 = new ARP();
+        l3.setHardwareType(ARP.HW_TYPE_ETHERNET);
+        l3.setProtocolType(ARP.PROTO_TYPE_IP);
+        l3.setHardwareAddressLength((byte) 6);
+        l3.setProtocolAddressLength((byte) 4);
+        l3.setOpCode(ARP.OP_REPLY);
+        l3.setSenderHardwareAddress(MacAddress.of(Ethernet.toMACAddress("ff:ff:ff:ff:ff:ff")));
+        l3.setTargetHardwareAddress(ipMacs.get(ip));
+    		l3.setSenderProtocolAddress(IPv4Address.of("10.0.0." + host));
+    		l3.setTargetProtocolAddress(ip);
+    		l3.setProtocolType(arp.getProtocolType());
+        l2.setPayload(l3);
+
+    		byte[] serializedData = ((IPacket) l2).serialize();
+
+        List<OFAction> list = new ArrayList<>();
+        list.add(sw.getOFFactory().actions().output(OFPort.FLOOD, 0xffFFffFF));
+    		OFPacketOut po = sw.getOFFactory().buildPacketOut()
+    			    .setData(serializedData)
+    			    .setActions(list)
+    			    .setInPort(OFPort.CONTROLLER)
+    			    .build();
+
+    		boolean messages = sw.write(po);
+        if(messages != true){
+          System.out.println("Não mandei");
+        }
+
+  	}
+
+    public void anycastUpdate(ARP arp){
+        IPv4Address target = arp.getSenderProtocolAddress();
+        MacAddress mac = arp.getSenderHardwareAddress();
+        if(anycast.containsKey(target) == false){
+            List<MacAddress> lista = new ArrayList();
+            lista.add(mac);
+            System.out.println("New target" + target + ": " + mac);
+            anycast.put(target, lista);
+        }
+        else{
+            List<MacAddress> lista = anycast.get(target);
+            if(lista.contains(mac) != true){
+                lista.add(mac);
+                System.out.println("" + mac);
             }
         }
     }
 
 
-    public void packetout(IOFSwitch sw, OFMessage msg, FloodlightContext cntx){
-        Ethernet eth = IFloodlightProviderService.bcStore.get(cntx, IFloodlightProviderService.CONTEXT_PI_PAYLOAD);
+    public void packetout(IOFSwitch sw, Ethernet eth, IPv4Address ip){
     		IPv4 ipv4 = (IPv4) eth.getPayload();
         UDP udp = (UDP) ipv4.getPayload();
         Data data = (Data) udp.getPayload();
+        if(ipMacs.containsKey(ip) == false){
+            System.out.println("Não tem ip");
+            ips.add(ip);
+            sws.add(sw);
+            eths.add(eth);
+            return;
+        }
 
-    		host += 1;
-    		host %= 2;
-    		int hostfinal = host + 2;
-        MacAddress mac = MacAddress.of("00:00:00:00:00:0" + hostfinal);
-        IPv4Address ip = IPv4Address.of("10.0.0." + hostfinal);
-        System.out.println(hostfinal);
     		Ethernet l2 = new Ethernet();
     		l2.setSourceMACAddress(eth.getSourceMACAddress());
-    		l2.setDestinationMACAddress(mac);
+    		l2.setDestinationMACAddress(ipMacs.get(ip));
     		l2.setEtherType(EthType.IPv4);
 
 
@@ -202,22 +245,91 @@ public class MACTracker implements IOFMessageListener, IFloodlightModule {
 
     		boolean messages = sw.write(po);
         if(messages != true){
-          System.out.println("Não mandei");
+            System.out.println("Não mandei");
         }
-
   	}
 
-    public void updateArps(OFMessage msg, FloodlightContext cntx){
-
-      Ethernet eth = IFloodlightProviderService.bcStore.get(cntx, IFloodlightProviderService.CONTEXT_PI_PAYLOAD);
-      ARP arp = (ARP) eth.getPayload();
-      MacAddress mac = arp.getTargetHardwareAddress();
-      IPv4Address ip = arp.getTargetProtocolAddress();
-      if(ipMacs.containsKey(mac) != true) ipMacs.put(mac, ip);
-      for(MacAddress m : ipMacs.keySet()){
-        System.out.println("Mac: " + m + ".IP: " + ipMacs.get(m));
+    public void updateArps(ARP arp){
+      MacAddress mac = arp.getSenderHardwareAddress();
+      IPv4Address ip = arp.getSenderProtocolAddress();
+      if(ipMacs.containsKey(ip) != true){
+          ipMacs.put(ip, mac);
+          int index = ips.indexOf(ip);
+          while(index != -1){
+            System.out.println("Já tenho." + index);
+            packetout(sws.get(index), eths.get(index), ips.get(index));
+            ips.remove(index);
+            eths.remove(index);
+            sws.remove(index);
+            index = ips.indexOf(ip);
+          }
       }
+      /*System.out.println("Update");
+      for(IPv4Address i : ipMacs.keySet()){
+        System.out.println("Mac: " + ipMacs.get(i) + ".IP: " + i);
+      }*/
 
+    }
+
+    public void printDetails(IOFSwitch sw, OFMessage msg, FloodlightContext cntx, Ethernet eth){
+      switch (msg.getType()) {
+      case PACKET_IN:
+          /* Retrieve the deserialized packet in message */
+
+
+          /* Various getters and setters are exposed in Ethernet */
+          MacAddress srcMac = eth.getSourceMACAddress();
+          MacAddress dstMac = eth.getDestinationMACAddress();
+          VlanVid vlanId = VlanVid.ofVlan(eth.getVlanID());
+          //if(sw.getId().getLong() == 1) System.out.println(sw.getId());
+
+          System.out.println("######################################");
+          System.out.println("Switch " + sw.getId().getLong());
+
+          if (eth.getEtherType() == EthType.IPv4) {
+
+              /* We got an IPv4 packet; get the payload from Ethernet */
+              IPv4 ipv4 = (IPv4) eth.getPayload();
+
+              /* Various getters and setters are exposed in IPv4 */
+              IPv4Address dstIp = ipv4.getDestinationAddress();
+              IPv4Address srcIp = ipv4.getSourceAddress();
+
+              System.out.println("IP Source: " + srcIp);
+              System.out.println("IP Destination: " + dstIp);
+
+              /*
+               * Check the IP protocol version of the IPv4 packet's payload.
+               */
+              if (ipv4.getProtocol() == IpProtocol.TCP) {
+
+                  System.out.println("Protocolo TCP");
+
+              } else if (ipv4.getProtocol() == IpProtocol.UDP) {
+
+                  System.out.println("Protocolo UDP");
+
+              } else if(ipv4.getProtocol() == IpProtocol.ICMP){
+
+                System.out.println("Protocolo ICMP");
+
+              }
+
+          } else if (eth.getEtherType() == EthType.ARP) {
+
+              ARP arp = (ARP) eth.getPayload();
+              System.out.println("Protocolo ARP");
+              System.out.println("MAC source: " + srcMac);
+              System.out.println("MAC destination: " + dstMac);
+
+          } else {
+              System.out.println("Unhandled ethertype");
+          }
+          System.out.println("######################################");
+          break;
+      default:
+          break;
+      }
     }
 
     /*
@@ -227,115 +339,57 @@ public class MACTracker implements IOFMessageListener, IFloodlightModule {
   	public Command receive(IOFSwitch sw, OFMessage msg, FloodlightContext cntx){
   	    switch (msg.getType()) {
   	    case PACKET_IN:
-  	        /* Retrieve the deserialized packet in message */
-  	        Ethernet eth = IFloodlightProviderService.bcStore.get(cntx, IFloodlightProviderService.CONTEXT_PI_PAYLOAD);
+            Ethernet eth = IFloodlightProviderService.bcStore.get(cntx, IFloodlightProviderService.CONTEXT_PI_PAYLOAD);
+            //printDetails(sw, msg, cntx, eth);
 
-  	        /* Various getters and setters are exposed in Ethernet */
-  	        MacAddress srcMac = eth.getSourceMACAddress();
-  	        MacAddress dstMac = eth.getDestinationMACAddress();
-  	        VlanVid vlanId = VlanVid.ofVlan(eth.getVlanID());
-            //if(sw.getId().getLong() == 1) System.out.println(sw.getId());
-
-  	        /*
-  	         * Check the ethertype of the Ethernet frame and retrieve the appropriate payload.
-  	         * Note the shallow equality check. EthType caches and reuses instances for valid types.
-  	         */
-      			if ((System.currentTimeMillis()-timebefore)>10000) {
-
-      				for (int i=1; i<48;i++){
-      					spb1 = statistics.getBandwidthConsumption(DatapathId.of("00:00:00:00:00:00:00:01") , OFPort.of(i));
-      					if (spb1 != null) {
-      						logger.info("Current Link Speed {} KBps on switch 1", spb1.getLinkSpeedBitsPerSec().getValue()/8192);
-      						logger.info("Current RX Bandwidth {} Bps on switch 1 port {}", spb1.getBitsPerSecondRx().getValue()/8,spb1.getSwitchPort().toString());
-      						logger.info("Current TX Bandwidth {} Bps on switch 1 port {}", spb1.getBitsPerSecondTx().getValue()/8,spb1.getSwitchPort().toString());
-      					}
-
-      				}
-      				for (int i=1; i<48;i++){
-      					spb2 = statistics.getBandwidthConsumption(DatapathId.of("00:00:00:00:00:00:00:02") , OFPort.of(i));
-      					if (spb2 != null) {
-      						logger.info("Current Link Speed {} KBps on switch 2", spb2.getLinkSpeedBitsPerSec().getValue()/8192);
-      						logger.info("Current RX Bandwidth {} Bps on switch 2 port {}", spb2.getBitsPerSecondRx().getValue()/8,spb2.getSwitchPort().toString());
-      						logger.info("Current TX Bandwidth {} Bps on switch 2 port {}", spb2.getBitsPerSecondTx().getValue()/8,spb2.getSwitchPort().toString());
-      					}
-
-      				}
-
-      				timebefore = System.currentTimeMillis();
-      			}
-
-  	        if (eth.getEtherType() == EthType.IPv4) {
-
-  	            /* We got an IPv4 packet; get the payload from Ethernet */
+            if (eth.getEtherType() == EthType.IPv4) {
                 IPv4 ipv4 = (IPv4) eth.getPayload();
+                String source = "" + ipv4.getSourceAddress();
+                String dest = "" + ipv4.getDestinationAddress();
 
-  	            /* Various getters and setters are exposed in IPv4 */
-  	            byte[] ipOptions = ipv4.getOptions();
-  	            IPv4Address dstIp = ipv4.getDestinationAddress();
-  	            IPv4Address srcIp = ipv4.getSourceAddress();
-                String str = "" + dstIp;
+                if (ipv4.getProtocol() == IpProtocol.UDP) {
 
-                /*if(str.equals("10.0.0.250") && sw.getId().getLong() == 1){
-                    packetout(sw, msg, cntx);
-                    return Command.STOP;
-                }*/
-
-  	            if(sw.getId().getLong() == 1) System.out.println("Source: " + srcIp + ". Destination: " + dstIp);
-
-  	            /*
-  	             * Check the IP protocol version of the IPv4 packet's payload.
-  	             */
-  	            if (ipv4.getProtocol() == IpProtocol.TCP) {
-
-                    if(sw.getId().getLong() == 1) System.out.println("TCP");
-
-  	            } else if (ipv4.getProtocol() == IpProtocol.UDP) {
-
-                    if(sw.getId().getLong() == 1){
-                      System.out.println("UDP");
-                      packetout(sw, msg, cntx);
-                      return Command.STOP;
+                    if((sw.getId().getLong() == 2 && dest.equals("10.0.0.240")){
+                        if(source.equals("10.0.0.1")){
+                            host++;
+                            host = host % 2;
+                            IPv4Address ipv = IPv4Address.of("10.0.0." + (host+5));
+                            packetout(sw, eth, ipv);
+                        }
+                        if(source.equals("10.0.0.2")){
+                            IPv4Address ipv = IPv4Address.of("10.0.0.5");
+                            packetout(sw, eth, ipv);
+                        }
                     }
-
-  	                /* Your logic here! */
-  	            } else if(ipv4.getProtocol() == IpProtocol.ICMP){
-
-                  if(sw.getId().getLong() == 1) System.out.println("ICMP");
-
                 }
+            }
 
-  	        } else if (eth.getEtherType() == EthType.ARP) {
-
+            else if(eth.getEtherType() == EthType.ARP){
                 ARP arp = (ARP) eth.getPayload();
+                //Guardar os ips associados a cada MAC
+                updateArps(arp);
+                IPv4Address target = arp.getTargetProtocolAddress();
+                String str = "" + target;
 
-                if(sw.getId().getLong() == 1) {
-                  System.out.println("ARP");
-  	        	    System.out.println("MAC source: " + srcMac + ". MAC destination: " + dstMac);
-                  String ip = arp.getSenderProtocolAddress() + "";
-                  if(ip.equals("10.0.0.1")){
-                      updateArps(msg, cntx);
-                  }
+                //Responder ao pedido de ARP, com um MAC não atribuido a ninguém
+                if(str.equals("10.0.0.250") && (sw.getId().getLong() == 2 || sw.getId().getLong() == 9)){
+                    arpAsk(sw, eth, arp, 5);
+                    arpAsk(sw, eth, arp, 6);
+                    arpReply(sw, eth, 250, arp);
                 }
-  	            /* We got an ARP packet; get the payload from Ethernet */
+                if(str.equals("10.0.0.240") && (sw.getId().getLong() == 2 || sw.getId().getLong() == 9)){
+                    arpAsk(sw, eth, arp, 5);
+                    arpAsk(sw, eth, arp, 6);
+                    arpReply(sw, eth, 240, arp);
+                }
 
-                /*if(str.equals("10.0.0.250") && sw.getId().getLong() == 2){
-                    arpout(sw, msg, cntx);
-                    return Command.STOP;
-                }*/
-                IPv4Address sender = arp.getSenderProtocolAddress();
-                String str = sender + "";
+                //Guardar os MACs associados a cada ip anycast
                 if(str.equals("10.0.0.250") && sw.getId().getLong() == 2){
-                  anycastUpdate(msg, cntx);
+                    anycastUpdate(arp);
                 }
 
 
-
-  	            /* Various getters and setters are exposed in ARP */
-  	            boolean gratuitous = arp.isGratuitous();
-
-  	        } else {
-  	            /* Unhandled ethertype */
-  	        }
+            }
   	        break;
   	    default:
   	        break;
