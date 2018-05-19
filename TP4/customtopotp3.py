@@ -6,6 +6,7 @@ from mininet.net import Mininet
 from mininet.log import setLogLevel, info
 from mininet.node import RemoteController
 from mininet.cli import CLI
+
 import os, sys
 
 
@@ -78,14 +79,14 @@ def run(opt=0):
     if opt:
         print('\nChecking dependencies...\n')
         #os.system('apt-get update')
-        os.system('apt-get install bind9 -y')
+        #os.system('apt-get install bind9 -y')
         #os.system('apt-get install atftpd -y')
         #os.system('apt-get install atftp -y')
         os.system('/etc/init.d/bind9 start')
     else:
         print('\nChecking dependencies...\n')
         #os.system('apt-get update > /dev/null')
-        os.system('apt-get install bind9 -y > /dev/null')
+        #os.system('apt-get install bind9 -y > /dev/null')
         #os.system('apt-get install atftpd -y > /dev/null')
         #os.system('apt-get install atftp -y > /dev/null')
         os.system('/etc/init.d/bind9 start > /dev/null')
@@ -95,12 +96,12 @@ def run(opt=0):
     #fs1.cmd('chown -R 1000:1000 /tftpboot')
     #fs1.cmd('chmod 777 /tftpboot')
     fs1.cmd('cd fs1')
-    fs1.cmd('../tftpserver.py -v &')
+    fs1.cmd('xterm -hold -e ../tftpserver.py -l 10 -b 10.0.0.3 &')
 
     #fs2.cmd('chown -R 1000:1000 /tftpboot')
     #fs2.cmd('chmod 777 /tftpboot')
     fs2.cmd('cd fs2')
-    fs2.cmd('../tftpserver.py -v &')
+    fs2.cmd('xterm -hold -e ../tftpserver.py -l 30 -b 10.0.0.4 &')
 
     net.start()
     CLI(net)
