@@ -96,12 +96,12 @@ def run(opt=0):
     #fs1.cmd('chown -R 1000:1000 /tftpboot')
     #fs1.cmd('chmod 777 /tftpboot')
     fs1.cmd('cd fs1')
-    fs1.cmd('xterm -hold -e ../tftpserver.py -l 10 -b 10.0.0.3 &')
+    fs1.cmd('xterm -hold -e ../tftpserver.py -l 10 -b 10.0.0.3 &') #o valor do -l representa um valor simulado de carga para testes de balanceamente
 
     #fs2.cmd('chown -R 1000:1000 /tftpboot')
     #fs2.cmd('chmod 777 /tftpboot')
     fs2.cmd('cd fs2')
-    fs2.cmd('xterm -hold -e ../tftpserver.py -l 30 -b 10.0.0.4 &')
+    fs2.cmd('xterm -hold -e ../tftpserver.py -l 30 -b 10.0.0.4 &') #o valor do -l representa um valor simulado de carga para testes de balanceamente
 
     net.start()
     CLI(net)

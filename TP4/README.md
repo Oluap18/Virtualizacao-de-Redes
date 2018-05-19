@@ -1,8 +1,5 @@
 # VRTP3
-Virtualização de redes - TP3
-
-chmod +777 customtoptp3.py
-sudo ./customtopotp3.py
+Virtualização de redes - TP3 parte 3
 
 Para testar as estatisticas:
 Por exemplo do H1 para H2, espera-se fluxo em duas portas de S1 e em duas portas de S2
@@ -17,46 +14,38 @@ iperf -c 10.0.0.2 -t 50 -i 10 -b 1m -f M
 
 Enviar por 50segunds, banda de 1mbit/s exibindo a cada 10 segundos no formato de MBytes/s
 
-deverá aparecer a cada 10 segundos no log:
 
-2018-04-18 21:07:58.226 INFO  [n.f.m.MACTracker] Current Link Speed 1220 KBps on switch 1
+Nota bene:
+É necessário habilitar o módulo de statistics para o balanceamento de carga funcionar! O floodlight não coleta estes dados por default devido ao processamento necessário.
 
-2018-04-18 21:07:58.227 INFO  [n.f.m.MACTracker] Current RX Bandwidth 669 Bps on switch 1 port 1
+Em: floodlightdefault.properties
 
-2018-04-18 21:07:58.227 INFO  [n.f.m.MACTracker] Current TX Bandwidth 127379 Bps on switch 1 port 1
+net.floodlightcontroller.statistics.StatisticsCollector.enable=TRUE
+net.floodlightcontroller.statistics.StatisticsCollector.collectionIntervalPortStatsSeconds=5
 
-2018-04-18 21:07:58.227 INFO  [n.f.m.MACTracker] Current Link Speed 1220 KBps on switch 1
 
-2018-04-18 21:07:58.227 INFO  [n.f.m.MACTracker] Current RX Bandwidth 127310 Bps on switch 1 port 2
 
-2018-04-18 21:07:58.227 INFO  [n.f.m.MACTracker] Current TX Bandwidth 669 Bps on switch 1 port 2
+Para o tftp client:
 
-2018-04-18 21:07:58.228 INFO  [n.f.m.MACTracker] Current Link Speed 1220 KBps on switch 2
 
-2018-04-18 21:07:58.228 INFO  [n.f.m.MACTracker] Current RX Bandwidth 159224 Bps on switch 2 port 1
+VR TP3 - Simple TFTP client 0.2
 
-2018-04-18 21:07:58.228 INFO  [n.f.m.MACTracker] Current TX Bandwidth 837 Bps on switch 2 port 1
+Commands:
+get [remote file] [new local name] - Get a file from server and optionally rename it 
+put [filename] - Uploads a file to the server 
+connect [ip] - connect to server on port 6969
+load - get server load in %
+ls - get local list of files
+rls - get list of files in the server
+help - print this help
 
-2018-04-18 21:07:58.228 INFO  [n.f.m.MACTracker] Current Link Speed 1220 KBps on switch 2
 
-2018-04-18 21:07:58.228 INFO  [n.f.m.MACTracker] Current RX Bandwidth 590 Bps on switch 2 port 2
+Ainda falta habilitar no cliente e servidor a possibilidade de transferir arquivos grandes. Isto pode causar problemas em manter o fluxo corretamente quando se faz uso de anycast.
 
-2018-04-18 21:07:58.228 INFO  [n.f.m.MACTracker] Current TX Bandwidth 127390 Bps on switch 2 port 2
 
-2018-04-18 21:07:58.228 INFO  [n.f.m.MACTracker] Current Link Speed 1220 KBps on switch 2
+O server parte automaticamente com o script do mininet
 
-2018-04-18 21:07:58.228 INFO  [n.f.m.MACTracker] Current RX Bandwidth 0 Bps on switch 2 port 3
 
-2018-04-18 21:07:58.228 INFO  [n.f.m.MACTracker] Current TX Bandwidth 79 Bps on switch 2 port 3
-
-2018-04-18 21:07:58.229 INFO  [n.f.m.MACTracker] Current Link Speed 1220 KBps on switch 2
-
-2018-04-18 21:07:58.229 INFO  [n.f.m.MACTracker] Current RX Bandwidth 0 Bps on switch 2 port 4
-
-2018-04-18 21:07:58.229 INFO  [n.f.m.MACTracker] Current TX Bandwidth 99 Bps on switch 2 port 4
-
-2018-04-18 21:07:58.229 INFO  [n.f.m.MACTracker] Current Link Speed 1220 KBps on switch 2
-
-2018-04-18 21:07:58.229 INFO  [n.f.m.MACTracker] Current RX Bandwidth 0 Bps on switch 2 port 5
-
-2018-04-18 21:07:58.229 INFO  [n.f.m.MACTracker] Current TX Bandwidth 69 Bps on switch 2 port 5
+Todo: 
+Fazer testes de balanceamento de carga juntamente com o iperf
+Entender melhor a configuração do bind9 e tentar usar containers docker para correr o primário e o secundário separadamente

@@ -61,9 +61,13 @@ class VRftp:
         print()
         print("Commands:")
         print("get [remote file] [new local name] - Get a file from server and optionally rename it ")
+        print("put [filename] - Uploads a file to the server ")
         print("connect [ip] - connect to server on port 6969")
-        print("loal - get server load in %")
+        print("load - get server load in %")
+        print("ls - get local list of files")
+        print("rls - get list of files in the server")
         print("help - print this help")
+        print()
         print("VRftp#>")
 
     def llist(self):
@@ -101,6 +105,7 @@ class VRftp:
                 print("Something went wrong. :(")
         except:
             print("Connection timed out")
+        print("VRftp#>")
 
     def connect(self):
         addrinfo = socket.getaddrinfo('localhost', None)[0]
@@ -119,12 +124,8 @@ class VRftp:
             if (payload[0]=="ERR"):
                 if (payload[1]==1):
                     print("Server sent errorn: 1 - File does not exist")
-                    #udpsocket.close()
-                    #print("VRftp#>")
                 if (payload[1]==2):
                     print("Server sent errorn: 2 - File is too big")
-                    #udpsocket.close()
-                    #print("VRftp#>")
                 else:
                     print("Server sent errorn: ", payload[1]) 
             elif (payload[0]=="DAT"):
@@ -138,7 +139,7 @@ class VRftp:
 
         except:
             print("Connection timed out")
-        #print("VRftp#>")
+        print("VRftp#>")
 
 
     def put(self,filename):
@@ -170,7 +171,7 @@ class VRftp:
 
         except:
             print("Connection timed out")
-        #print("VRftp#>")
+        print("VRftp#>")
 
         
     def sendfile(self, sendfd, socket, ip , port, filename):  

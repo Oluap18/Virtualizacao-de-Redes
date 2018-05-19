@@ -62,7 +62,7 @@ class VRftpserver:
             senderPort = (sender[1])
             if (self.verbose):
                 #print(data.decode())
-                print("Got a connection from: ",senderIP, " on port ", senderPort)
+                if (self.verbose):print("Got a connection from: ",senderIP, " on port ", senderPort)
             if (payload[0]=='RRQ'):
                 #clientsocket = socket.socket(addrinfo[0], socket.SOCK_DGRAM)
                 if (self.verbose): print("Client requested: ",payload[1])
