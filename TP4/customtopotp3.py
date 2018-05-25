@@ -80,28 +80,20 @@ def run(opt=0):
         print('\nChecking dependencies...\n')
         #os.system('apt-get update')
         #os.system('apt-get install bind9 -y')
-        #os.system('apt-get install atftpd -y')
-        #os.system('apt-get install atftp -y')
-        os.system('/etc/init.d/bind9 start')
     else:
         print('\nChecking dependencies...\n')
         #os.system('apt-get update > /dev/null')
         #os.system('apt-get install bind9 -y > /dev/null')
-        #os.system('apt-get install atftpd -y > /dev/null')
-        #os.system('apt-get install atftp -y > /dev/null')
-        os.system('/etc/init.d/bind9 start > /dev/null')
     dns1.cmd('ifconfig dns1-eth1 10.0.0.240 netmask 255.0.0.0')
     dns2.cmd('ifconfig dns2-eth1 10.0.0.240 netmask 255.0.0.0')
+    dns1.cmd('xterm -T "DNS1" -hold -e  /usr/sbin/named -d 4 -c /etc/bind/dns1/conf/named.conf &')
+    dns2.cmd('xterm -T "DNS2" -hold -e  /usr/sbin/named -d 4 -c /etc/bind/dns2/conf/named.conf &')
 
-    #fs1.cmd('chown -R 1000:1000 /tftpboot')
-    #fs1.cmd('chmod 777 /tftpboot')
     fs1.cmd('cd fs1')
-    fs1.cmd('xterm -hold -e ../tftpserver.py -l 10 -b 10.0.0.3 &') #o valor do -l representa um valor simulado de carga para testes de balanceamente
+    fs1.cmd('xterm -T "FTP1" -hold -e ../tftpserver.py -l 10 -b 10.0.0.3 &') #o valor do -l representa um valor simulado de carga para testes de balanceamente
 
-    #fs2.cmd('chown -R 1000:1000 /tftpboot')
-    #fs2.cmd('chmod 777 /tftpboot')
     fs2.cmd('cd fs2')
-    fs2.cmd('xterm -hold -e ../tftpserver.py -l 30 -b 10.0.0.4 &') #o valor do -l representa um valor simulado de carga para testes de balanceamente
+    fs2.cmd('xterm -T "FTP2" -hold -e ../tftpserver.py -l 30 -b 10.0.0.4 &') #o valor do -l representa um valor simulado de carga para testes de balanceamente
 
     net.start()
     CLI(net)

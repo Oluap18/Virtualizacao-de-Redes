@@ -1,0 +1,19 @@
+//
+// Do any local configuration here
+//
+
+// Consider adding the 1918 zones here, if they are not used in your
+// organization
+//include "/etc/bind/zones.rfc1918";
+
+zone "vrtp3" {
+    type slave;
+    file "/etc/bind/dns2/conf/db.vrtp3"; # zone file path
+    masters { 10.0.0.5; };         # ns2 private IP address - secondary
+};
+
+zone "0.0.10.in-addr.arpa" {
+    type slave;
+    file "/etc/bind/dns2/conf/db.10.0.0";  # 10.128.0.0/16 subnet
+    masters { 10.0.0.5; };  # ns2 private IP address - secondary
+};

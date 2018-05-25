@@ -46,6 +46,7 @@ public class MACTracker implements IOFMessageListener, IFloodlightModule {
   	protected Set<Long> macAddresses;
   	protected static Logger logger;
     public int host = 0;
+    boolean dnsToggle = false;
     long timebefore = 0;
 
   	StatisticsCollector statistics = new StatisticsCollector();
@@ -81,7 +82,9 @@ public class MACTracker implements IOFMessageListener, IFloodlightModule {
 
   	@Override
   	public boolean isCallbackOrderingPostreq(OFType type, String name) {
-  		// TODO Auto-generated method stub
+        if(type.equals(OFType.PACKET_IN) && name.equals("forwarding")){
+			return true;
+		}
   		return false;
   	}
 
@@ -256,14 +259,68 @@ public class MACTracker implements IOFMessageListener, IFloodlightModule {
     		OFPacketOut po = sw.getOFFactory().buildPacketOut()
     			    .setData(serializedData)
     			    .setActions(list)
-                    .setInPort(OFPort.of(outPort))
+                    .setInPort(OFPort.CONTROLLER)
     			    .build();
 
     		boolean messages = sw.write(po);
         if(messages != true){
             System.out.println("Não mandei");
         }
-                            //.setInPort(OFPort.CONTROLLER)
+      }
+      
+    public void dnsout(IOFSwitch sw, Ethernet eth, IPv4Address ip){
+        IPv4 ipv4 = (IPv4) eth.getPayload();
+        UDP udp = (UDP) ipv4.getPayload();
+        Data data = (Data) udp.getPayload();
+        if(ipMacs.containsKey(ip) == false){
+            ips.add(ip);
+            sws.add(sw);
+            eths.add(eth);
+            return;
+        }
+        
+        //System.out.println("DNSout port: "+udp.getSourcePort());
+        Ethernet l2 = new Ethernet();
+        l2.setSourceMACAddress(eth.getSourceMACAddress());
+        l2.setDestinationMACAddress(eth.getDestinationMACAddress());
+        l2.setEtherType(EthType.IPv4);
+
+        IPv4 l3 = new IPv4();
+        if ((udp.getSourcePort().getPort()==53)&&!((ipv4.getDestinationAddress().equals("10.0.0.5"))||(ipv4.getDestinationAddress().equals("10.0.0.6")))){
+            l3.setSourceAddress(ip);
+        } 
+        else{
+            l3.setSourceAddress(ipv4.getSourceAddress());
+        } 
+        l3.setDestinationAddress(ipv4.getDestinationAddress());
+        l3.setProtocol(IpProtocol.UDP);
+        l3.setTtl((byte) 64);
+
+        UDP l4 = new UDP();
+        l4.setSourcePort(udp.getSourcePort());
+        l4.setDestinationPort(udp.getDestinationPort());
+
+        Data l7 = new Data();
+        l7.setData(data.getData());
+        l4.setPayload(l7);
+        l3.setPayload(l4);
+        l2.setPayload(l3);
+
+        byte[] serializedData = ((IPacket) l2).serialize();
+
+        List<OFAction> list = new ArrayList<>();
+        list.add(sw.getOFFactory().actions().output(OFPort.FLOOD, 0xffFFffFF));
+    		OFPacketOut po = sw.getOFFactory().buildPacketOut()
+    			    .setData(serializedData)
+    			    .setActions(list)
+                    .setInPort(OFPort.CONTROLLER)
+    			    .build();
+
+    		boolean messages = sw.write(po);
+        if(messages != true){
+            System.out.println("Não mandei");
+        }
+
   	}
 
     public void updateArps(ARP arp, int port){
@@ -375,7 +432,7 @@ public class MACTracker implements IOFMessageListener, IFloodlightModule {
             if ((System.currentTimeMillis()-timebefore)>5000) {
                 //System.out.println("IM now on switch "+ sw.getId());
 
-                Collection portas  = sw.getEnabledPorts();
+                //Collection portas  = sw.getEnabledPorts();
                 //System.out.println("Port "+portas+" is enabled");
 
 				for (int i=1; i<24;i++){
@@ -491,9 +548,7 @@ public class MACTracker implements IOFMessageListener, IFloodlightModule {
                             //Getting the port from where the packet came from
                             //There is a easier way to get inPort but it's not available in the recent versions of floodlight anymore
                             inPort  = Integer.parseInt(pktIn.getMatch().toString().split("=")[1].substring(0,pktIn.getMatch().toString().split("=")[1].length()-1));
-                            System.out.println("Packet from port: "+inPort+" in switch:"+sw.getId());
-                            //System.out.println("TX MAP "+txmap.size());
-                            //System.out.println(txmap.keySet());
+                            //System.out.println("Packet from port: "+inPort+" in switch:"+sw.getId())
 
                             for ( Map.Entry<Integer, Long> entry : txmap.entrySet() ) {
                                 Integer key = entry.getKey();
@@ -507,16 +562,27 @@ public class MACTracker implements IOFMessageListener, IFloodlightModule {
                             if(outPort==inPort)
                                 outPort++;
 
-                            System.out.println("Chosen out port: "+outPort);
+                            //System.out.println("Chosen out port: "+outPort);
                             if(source.equals("10.0.0.1")){
-                                host++;
-                                host = host % 2;
-                                IPv4Address ipv = IPv4Address.of("10.0.0." + (host+5));
-                                packetout(sw, eth, ipv,outPort);
+                                if (!dnsToggle) {
+                                    IPv4Address ipv = IPv4Address.of("10.0.0.5");
+                                    dnsToggle = true;
+                                    packetout(sw, eth, ipv, outPort);
+                                    return Command.STOP;
+                                } else {
+                                    IPv4Address ipv = IPv4Address.of("10.0.0.6");
+                                    dnsToggle = false;
+                                    packetout(sw, eth, ipv, outPort);
+                                    return Command.STOP;
+                                }
+                                //System.out.println("Chosen dns: "+host+5);
+                                
                             }
                             if(source.equals("10.0.0.2")){
                                 IPv4Address ipv = IPv4Address.of("10.0.0.5");
+                                //System.out.println("Chosen dns: 5");
                                 packetout(sw, eth, ipv,outPort);
+                                return Command.STOP;
                             }
                         }
                         //Distribuir pelos fileservers
@@ -526,8 +592,8 @@ public class MACTracker implements IOFMessageListener, IFloodlightModule {
                             //Getting the port from where the packet came from
                              //There is a easier way to get inPort but it's not available in the recent versions of floodlight anymore
                             inPort  = Integer.parseInt(pktIn.getMatch().toString().split("=")[1].substring(0,pktIn.getMatch().toString().split("=")[1].length()-1));
-                            System.out.println("Packet from port: "+inPort+" in switch:"+sw.getId());
-                            //System.out.println("TX MAP "+txmap.size());
+                            //System.out.println("Packet from port: "+inPort+" in switch:"+sw.getId());
+
                             //Now we need to check with port has lower traffic and that is not from where the packet came from
                             for ( Map.Entry<Integer, Long> entry : txmap.entrySet() ) {
                                 Integer key = entry.getKey();
@@ -541,32 +607,13 @@ public class MACTracker implements IOFMessageListener, IFloodlightModule {
                             if(outPort==inPort)
                                 outPort++;
 
-                            System.out.println("Chosen out port: "+outPort);
-
-
-                            //Now the server load feature is working on a passive way, but needs to be migrated to an activer way where the controler asks the server its load.
-                            /*try {
-                                DatagramSocket clientSocket = new DatagramSocket();
-                                InetAddress IPAddress = InetAddress.getByName("10.0.0.3");
-                                byte[] sendData = new byte[1024];
-                                byte[] receiveData = new byte[1024];
-                                String sentence  = "LOAD";
-                                sendData = sentence.getBytes();
-                                DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, 6969);
-                                clientSocket.send(sendPacket);
-                                DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
-                                clientSocket.receive(receivePacket);
-                                String modifiedSentence = new String(receivePacket.getData());
-                                System.out.println("FROM SERVER:" + modifiedSentence);
-                                clientSocket.close();
-                            }   catch (Exception e) {
-                                e.printStackTrace();
-                            }*/
+                            //System.out.println("Chosen out port: "+outPort);
 
                             if(fs1 >= fs2){
                                 IPv4Address ipv = IPv4Address.of("10.0.0.4");
                                 //System.out.println("Sending all to server 2");
                                 packetout(sw, eth, ipv,outPort);
+                                return Command.STOP;
                             }
                             else{
                                 IPv4Address ipv = IPv4Address.of("10.0.0.3");
@@ -575,15 +622,18 @@ public class MACTracker implements IOFMessageListener, IFloodlightModule {
                                 return Command.STOP;
                             }
                         }
+                        else if(  source.equals("10.0.0.5") || (source.equals("10.0.0.6")) )  {
+                            IPv4Address ipv = IPv4Address.of("10.0.0.240");
+                            dnsout(sw, eth, ipv);
+                            return Command.STOP;
+                        }
                     }
-
-
                 }
             }
   	        break;
   	    default:
   	        break;
   	    }
-  	    return Command.STOP;
+  	    return Command.CONTINUE;
   	}
 }
