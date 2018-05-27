@@ -16,6 +16,7 @@ class VRftp:
     def scheduler(self):
         #try:
             #_thread.start_new_thread(self.udp_listener, ())
+        print("VR TP3 - Simple TFTP client 0.3")
         self.prompt() #anchor for the threads
         #except:
         #    print("Scheduling error!")
@@ -57,7 +58,7 @@ class VRftp:
   
     def printhelp(self):
         print()
-        print("VR TP3 - Simple TFTP client 0.2")
+        print("VR TP3 - Simple TFTP client 0.3")
         print()
         print("Commands:")
         print("get [remote file] [new local name] - Get a file from server and optionally rename it ")
@@ -67,13 +68,14 @@ class VRftp:
         print("ls - get local list of files")
         print("rls - get list of files in the server")
         print("help - print this help")
+        print("######## Only ascii files for now #########")
         print()
-        print("VRftp#>")
+        #print("VRftp#>")
 
     def llist(self):
         files = [f for f in os.listdir("./") if os.path.isfile(os.path.join("./", f))]
         print(files)
-        print("VRftp#>")
+        #print("VRftp#>")
 
     def rlist(self):
         addrinfo = socket.getaddrinfo('localhost', None)[0]
@@ -89,7 +91,7 @@ class VRftp:
                 print("Got a malformed packet")
         except:
             print("Connection timed out")
-        print("VRftp#>")
+        #print("VRftp#>")
 
     def load(self):
         addrinfo = socket.getaddrinfo('localhost', None)[0]
@@ -105,7 +107,7 @@ class VRftp:
                 print("Something went wrong. :(")
         except:
             print("Connection timed out")
-        print("VRftp#>")
+        #print("VRftp#>")
 
     def connect(self):
         addrinfo = socket.getaddrinfo('localhost', None)[0]
@@ -139,7 +141,7 @@ class VRftp:
 
         except:
             print("Connection timed out")
-        print("VRftp#>")
+        #print("VRftp#>")
 
 
     def put(self,filename):
@@ -171,7 +173,7 @@ class VRftp:
 
         except:
             print("Connection timed out")
-        print("VRftp#>")
+        #print("VRftp#>")
 
         
     def sendfile(self, sendfd, socket, ip , port, filename):  

@@ -63,9 +63,12 @@ public class MACTracker implements IOFMessageListener, IFloodlightModule {
     public List<IOFSwitch> sws = new ArrayList();
     public List<Ethernet> eths = new ArrayList();
     public List<IPv4Address> ips = new ArrayList();
-    //Guardar o iddle time dos CPUs dos file servers
+    //Guardar o load time dos CPUs dos file servers
     public Double fs1 = 0.0;
     public Double fs2 = 0.0;
+    double bwd1=0;
+    double bwd2=0;
+    long linkspeed = 1000000000;
 
 
     
@@ -131,7 +134,7 @@ public class MACTracker implements IOFMessageListener, IFloodlightModule {
         l2.setEtherType(eth.getEtherType());
 
 
-    		ARP l3 = new ARP();
+        ARP l3 = new ARP();
         l3.setHardwareType(ARP.HW_TYPE_ETHERNET);
         l3.setProtocolType(ARP.PROTO_TYPE_IP);
         l3.setHardwareAddressLength((byte) 6);
@@ -144,19 +147,19 @@ public class MACTracker implements IOFMessageListener, IFloodlightModule {
         l3.setProtocolType(arp.getProtocolType());
         l2.setPayload(l3);
 
-    		byte[] serializedData = ((IPacket) l2).serialize();
+        byte[] serializedData = ((IPacket) l2).serialize();
 
         List<OFAction> list = new ArrayList<>();
         list.add(sw.getOFFactory().actions().output(OFPort.FLOOD, 0xffFFffFF));
-    		OFPacketOut po = sw.getOFFactory().buildPacketOut()
-    			    .setData(serializedData)
-    			    .setActions(list)
-    			    .setInPort(OFPort.CONTROLLER)
-    			    .build();
+        OFPacketOut po = sw.getOFFactory().buildPacketOut()
+                .setData(serializedData)
+                .setActions(list)
+                .setInPort(OFPort.CONTROLLER)
+                .build();
 
-    		boolean messages = sw.write(po);
+        boolean messages = sw.write(po);
         if(messages != true){
-          System.out.println("Não mandei");
+            System.out.println("Não mandei");
         }
 
   	}
@@ -187,15 +190,15 @@ public class MACTracker implements IOFMessageListener, IFloodlightModule {
 
         List<OFAction> list = new ArrayList<>();
         list.add(sw.getOFFactory().actions().output(OFPort.FLOOD, 0xffFFffFF));
-    		OFPacketOut po = sw.getOFFactory().buildPacketOut()
-    			    .setData(serializedData)
-    			    .setActions(list)
-    			    .setInPort(OFPort.CONTROLLER)
-    			    .build();
+        OFPacketOut po = sw.getOFFactory().buildPacketOut()
+                .setData(serializedData)
+                .setActions(list)
+                .setInPort(OFPort.CONTROLLER)
+                .build();
 
-    		boolean messages = sw.write(po);
+        boolean messages = sw.write(po);
         if(messages != true){
-          System.out.println("Não mandei");
+            System.out.println("Não mandei");
         }
 
   	}
@@ -311,13 +314,13 @@ public class MACTracker implements IOFMessageListener, IFloodlightModule {
 
         List<OFAction> list = new ArrayList<>();
         list.add(sw.getOFFactory().actions().output(OFPort.FLOOD, 0xffFFffFF));
-    		OFPacketOut po = sw.getOFFactory().buildPacketOut()
-    			    .setData(serializedData)
-    			    .setActions(list)
-                    .setInPort(OFPort.CONTROLLER)
-    			    .build();
+        OFPacketOut po = sw.getOFFactory().buildPacketOut()
+                .setData(serializedData)
+                .setActions(list)
+                .setInPort(OFPort.CONTROLLER)
+                .build();
 
-    		boolean messages = sw.write(po);
+        boolean messages = sw.write(po);
         if(messages != true){
             System.out.println("Não mandei");
         }
@@ -423,15 +426,14 @@ public class MACTracker implements IOFMessageListener, IFloodlightModule {
         long txbw;
         int inPort;
 
+
   	    switch (msg.getType()) {
   	    case PACKET_IN:
             Ethernet eth = IFloodlightProviderService.bcStore.get(cntx, IFloodlightProviderService.CONTEXT_PI_PAYLOAD);
             OFPacketIn pktIn = (OFPacketIn) msg;
             //printDetails(sw, msg, cntx, eth);
             
-            
-
-
+ 
             if(eth.getEtherType() == EthType.ARP){
                 ARP arp = (ARP) eth.getPayload();
                 inPort  = Integer.parseInt(pktIn.getMatch().toString().split("=")[1].substring(0,pktIn.getMatch().toString().split("=")[1].length()-1));
@@ -542,8 +544,8 @@ public class MACTracker implements IOFMessageListener, IFloodlightModule {
                                 return Command.STOP;
                             }
                         }
-                        //Distribuir pelos fileservers
-                        else if(dest.equals("10.0.0.250")&& sw.getId().getLong() == 1){
+                        //Distribuir pelos fileservers && sw.getId().getLong() == 1
+                        else if(dest.equals("10.0.0.250")){
 
                             if ((System.currentTimeMillis()-timebefore)>5000) {
                                 //System.out.println("IM now on switch "+ sw.getId());
@@ -551,13 +553,14 @@ public class MACTracker implements IOFMessageListener, IFloodlightModule {
                                 for (int i=1; i<24;i++){
 
                                     try{
-                                        spb1 = statistics.getBandwidthConsumption(DatapathId.of(sw.getId().toString()) , OFPort.of(i));
+                                        spb1 = statistics.getBandwidthConsumption(DatapathId.of("00:00:00:00:00:00:00:01") , OFPort.of(i));
                                         if (spb1 != null) {
                                             rxbw = spb1.getBitsPerSecondRx().getValue();
                                             rxmap.put(i,rxbw);
                                             txbw = spb1.getBitsPerSecondTx().getValue();
                                             txmap.put(i,txbw);
                                             bwdmap.put(i,rxbw+txbw);
+                                            linkspeed = spb1.getLinkSpeedBitsPerSec().getValue();
                                         } 
                                     }   catch (Exception e) {
                                         //e.printStackTrace();
@@ -565,27 +568,22 @@ public class MACTracker implements IOFMessageListener, IFloodlightModule {
                                     }
                                 }
                                 timebefore = System.currentTimeMillis();
+                                bwd1 =(double) (bwdmap.get(1)/(double)linkspeed)*100.0;
+                                bwd2 =(double) (bwdmap.get(3)/(double)linkspeed)*100.0;
                             } 
 
                             //inPort  = Integer.parseInt(pktIn.getMatch().toString().split("=")[1].substring(0,pktIn.getMatch().toString().split("=")[1].length()-1));
-       
+          
 
                             //Now we need to check with port has lower traffic and that is not from where the packet came from
-                            System.out.println("Bandwidth FS1: "+bwdmap.get(1));
-                            System.out.println("Bandwidth FS2: "+bwdmap.get(3));
-                            System.out.println("Load FS1: "+fs1);
-                            System.out.println("Load FS2: "+fs2);
+                            System.out.println("Switch capability: "+ (double)linkspeed/1000000.0 + "Mbps");
+                            System.out.println("Bandwidth FS1: "+ bwd1 + "%");
+                            System.out.println("Bandwidth FS2: "+ bwd2 + "%");
+                            System.out.println("Load FS1: "+fs1+ "%");
+                            System.out.println("Load FS2: "+fs2+ "%");
 
-                            long bwd1 = bwdmap.get(1);
-                            long bwd2 = bwdmap.get(3);
-       
 
-                            /*
-                            File server 1 always is preferred. Choose FS2 only if both load and bandwidth are higher on FS1
-                            */
-                            
-
-                            if((fs1 >= fs2)&&(bwd1>=bwd2)){
+                            if((fs1+bwd1 >= fs2+bwd2)){
                                 IPv4Address ipv = IPv4Address.of("10.0.0.4");
                                 System.out.println("Choosing server 2");
                                 packetout(sw, eth, ipv);

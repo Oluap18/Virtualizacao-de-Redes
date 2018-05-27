@@ -24,7 +24,7 @@ class VRftpserver:
 
     def scheduler(self):
         #try:
-        print("VR TP3 - Simple TFTP server 0.1")
+        print("VR TP3 - Simple TFTP server 0.3")
         print("Server started")
         _thread.start_new_thread(self.udp_listener, ())
         self.loadCalculator() #anchor for the threads
