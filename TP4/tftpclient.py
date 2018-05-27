@@ -161,7 +161,7 @@ class VRftp:
                             self.sendfile(readfd, putudpsocket, senderIP, senderPort,filename) 
                             print("File sent")
                         except:
-                            print("Error opening file")
+                            print("Error opening and sending file")
                     else:
                         print("File is too big. Max 60kB supported in this version")
 

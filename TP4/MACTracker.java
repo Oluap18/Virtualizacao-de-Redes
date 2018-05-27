@@ -57,6 +57,7 @@ public class MACTracker implements IOFMessageListener, IFloodlightModule {
 
     HashMap<Integer, Long> rxmap= new HashMap<Integer, Long>();
     HashMap<Integer, Long> txmap= new HashMap<Integer, Long>();
+    HashMap<Integer, Long> bwdmap= new HashMap<Integer, Long>();
 
     //Guarda as informações dos pacotes a enviar, quando souber os ips e MACs dos destinos
     public List<IOFSwitch> sws = new ArrayList();
@@ -218,7 +219,7 @@ public class MACTracker implements IOFMessageListener, IFloodlightModule {
     }
 
 
-    public void packetout(IOFSwitch sw, Ethernet eth, IPv4Address ip, int outPort){
+    public void packetout(IOFSwitch sw, Ethernet eth, IPv4Address ip){
         IPv4 ipv4 = (IPv4) eth.getPayload();
         UDP udp = (UDP) ipv4.getPayload();
         Data data = (Data) udp.getPayload();
@@ -323,7 +324,7 @@ public class MACTracker implements IOFMessageListener, IFloodlightModule {
 
   	}
 
-    public void updateArps(ARP arp, int port){
+    public void updateArps(ARP arp){
       MacAddress mac = arp.getSenderHardwareAddress();
       IPv4Address ip = arp.getSenderProtocolAddress();
       if(ipMacs.containsKey(ip) != true){
@@ -331,7 +332,7 @@ public class MACTracker implements IOFMessageListener, IFloodlightModule {
           int index = ips.indexOf(ip);
           while(index != -1){
             //System.out.println("Já tenho." + index);
-            packetout(sws.get(index), eths.get(index), ips.get(index),port);
+            packetout(sws.get(index), eths.get(index), ips.get(index));
             ips.remove(index);
             eths.remove(index);
             sws.remove(index);
@@ -429,37 +430,13 @@ public class MACTracker implements IOFMessageListener, IFloodlightModule {
             //printDetails(sw, msg, cntx, eth);
             
             
-            if ((System.currentTimeMillis()-timebefore)>5000) {
-                //System.out.println("IM now on switch "+ sw.getId());
 
-                //Collection portas  = sw.getEnabledPorts();
-                //System.out.println("Port "+portas+" is enabled");
-
-				for (int i=1; i<24;i++){
-                    /*if (sw.portEnabled(i)){
-                        System.out.println("Port "+i+" is enabled");
-                    }*/
-                    try{
-                        spb1 = statistics.getBandwidthConsumption(DatapathId.of(sw.getId().toString()) , OFPort.of(i));
-                        if (spb1 != null) {
-                            rxbw = spb1.getBitsPerSecondRx().getValue();
-                            rxmap.put(i,rxbw);
-                            txbw = spb1.getBitsPerSecondTx().getValue();
-                            txmap.put(i,txbw);
-                        } 
-                    }   catch (Exception e) {
-                        //e.printStackTrace();
-                        logger.trace("Statistics is not ready to give us values now. Trying again in a few seconds.");
-                    }
-				}
-				timebefore = System.currentTimeMillis();
-			} 
 
             if(eth.getEtherType() == EthType.ARP){
                 ARP arp = (ARP) eth.getPayload();
                 inPort  = Integer.parseInt(pktIn.getMatch().toString().split("=")[1].substring(0,pktIn.getMatch().toString().split("=")[1].length()-1));
                 //Guardar os ips associados a cada MAC
-                updateArps(arp,inPort);
+                updateArps(arp);
                 IPv4Address target = arp.getTargetProtocolAddress();
                 String sender = "" + arp.getSenderProtocolAddress();
                 String str = "" + target;
@@ -529,7 +506,6 @@ public class MACTracker implements IOFMessageListener, IFloodlightModule {
                     if(sw.getId().getLong() == 1 && dest.equals("10.0.0.254") ){
                         Data data = (Data) ipv4.getPayload().getPayload();
                         String cpu = new String(data.getData());
-                        //cpu = cpu.replace(',', '.');
                         if(source.equals("10.0.0.3")){
                             //System.out.println("Current load file server 1: "+ cpu);
                             fs1 = new Double(cpu);
@@ -543,82 +519,82 @@ public class MACTracker implements IOFMessageListener, IFloodlightModule {
  
                         //Distribuir pelos dns
                         if(dest.equals("10.0.0.240")){
-                            int outPort=1;
-                            long lower=1000000;
-                            //Getting the port from where the packet came from
-                            //There is a easier way to get inPort but it's not available in the recent versions of floodlight anymore
-                            inPort  = Integer.parseInt(pktIn.getMatch().toString().split("=")[1].substring(0,pktIn.getMatch().toString().split("=")[1].length()-1));
-                            //System.out.println("Packet from port: "+inPort+" in switch:"+sw.getId())
 
-                            for ( Map.Entry<Integer, Long> entry : txmap.entrySet() ) {
-                                Integer key = entry.getKey();
-                                Long value = entry.getValue();
-                                if ((value<lower) && (key!=inPort)){
-                                    outPort = key;
-                                    lower = value;
-                                }
-                                //System.out.println(key+":" +value);
-                            }
-                            if(outPort==inPort)
-                                outPort++;
-
-                            //System.out.println("Chosen out port: "+outPort);
+                            //inPort  = Integer.parseInt(pktIn.getMatch().toString().split("=")[1].substring(0,pktIn.getMatch().toString().split("=")[1].length()-1));
+                  
                             if(source.equals("10.0.0.1")){
                                 if (!dnsToggle) {
                                     IPv4Address ipv = IPv4Address.of("10.0.0.5");
                                     dnsToggle = true;
-                                    packetout(sw, eth, ipv, outPort);
+                                    packetout(sw, eth, ipv);
                                     return Command.STOP;
                                 } else {
                                     IPv4Address ipv = IPv4Address.of("10.0.0.6");
                                     dnsToggle = false;
-                                    packetout(sw, eth, ipv, outPort);
+                                    packetout(sw, eth, ipv);
                                     return Command.STOP;
                                 }
-                                //System.out.println("Chosen dns: "+host+5);
                                 
                             }
                             if(source.equals("10.0.0.2")){
                                 IPv4Address ipv = IPv4Address.of("10.0.0.5");
-                                //System.out.println("Chosen dns: 5");
-                                packetout(sw, eth, ipv,outPort);
+                                packetout(sw, eth, ipv);
                                 return Command.STOP;
                             }
                         }
                         //Distribuir pelos fileservers
-                        else if(dest.equals("10.0.0.250")){
-                            int outPort=1;
-                            long lower=1000000;
-                            //Getting the port from where the packet came from
-                             //There is a easier way to get inPort but it's not available in the recent versions of floodlight anymore
-                            inPort  = Integer.parseInt(pktIn.getMatch().toString().split("=")[1].substring(0,pktIn.getMatch().toString().split("=")[1].length()-1));
-                            //System.out.println("Packet from port: "+inPort+" in switch:"+sw.getId());
+                        else if(dest.equals("10.0.0.250")&& sw.getId().getLong() == 1){
+
+                            if ((System.currentTimeMillis()-timebefore)>5000) {
+                                //System.out.println("IM now on switch "+ sw.getId());
+       
+                                for (int i=1; i<24;i++){
+
+                                    try{
+                                        spb1 = statistics.getBandwidthConsumption(DatapathId.of(sw.getId().toString()) , OFPort.of(i));
+                                        if (spb1 != null) {
+                                            rxbw = spb1.getBitsPerSecondRx().getValue();
+                                            rxmap.put(i,rxbw);
+                                            txbw = spb1.getBitsPerSecondTx().getValue();
+                                            txmap.put(i,txbw);
+                                            bwdmap.put(i,rxbw+txbw);
+                                        } 
+                                    }   catch (Exception e) {
+                                        //e.printStackTrace();
+                                        logger.trace("Statistics is not ready to give us values now. Trying again in a few seconds.");
+                                    }
+                                }
+                                timebefore = System.currentTimeMillis();
+                            } 
+
+                            //inPort  = Integer.parseInt(pktIn.getMatch().toString().split("=")[1].substring(0,pktIn.getMatch().toString().split("=")[1].length()-1));
+       
 
                             //Now we need to check with port has lower traffic and that is not from where the packet came from
-                            for ( Map.Entry<Integer, Long> entry : txmap.entrySet() ) {
-                                Integer key = entry.getKey();
-                                Long value = entry.getValue();
-                                if ((value<lower) && (key!=inPort)){
-                                    outPort = key;
-                                    lower = value;
-                                }
-                                //System.out.println(key+":" +value);
-                            }
-                            if(outPort==inPort)
-                                outPort++;
+                            System.out.println("Bandwidth FS1: "+bwdmap.get(1));
+                            System.out.println("Bandwidth FS2: "+bwdmap.get(3));
+                            System.out.println("Load FS1: "+fs1);
+                            System.out.println("Load FS2: "+fs2);
 
-                            //System.out.println("Chosen out port: "+outPort);
+                            long bwd1 = bwdmap.get(1);
+                            long bwd2 = bwdmap.get(3);
+       
 
-                            if(fs1 >= fs2){
+                            /*
+                            File server 1 always is preferred. Choose FS2 only if both load and bandwidth are higher on FS1
+                            */
+                            
+
+                            if((fs1 >= fs2)&&(bwd1>=bwd2)){
                                 IPv4Address ipv = IPv4Address.of("10.0.0.4");
-                                //System.out.println("Sending all to server 2");
-                                packetout(sw, eth, ipv,outPort);
+                                System.out.println("Choosing server 2");
+                                packetout(sw, eth, ipv);
                                 return Command.STOP;
                             }
                             else{
                                 IPv4Address ipv = IPv4Address.of("10.0.0.3");
-                                //System.out.println("Sending all to server 1");
-                                packetout(sw, eth, ipv,outPort);
+                                System.out.println("Choosing server 1");
+                                packetout(sw, eth, ipv);
                                 return Command.STOP;
                             }
                         }

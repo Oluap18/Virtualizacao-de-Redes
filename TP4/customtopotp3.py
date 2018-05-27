@@ -86,8 +86,8 @@ def run(opt=0):
         #os.system('apt-get install bind9 -y > /dev/null')
     dns1.cmd('ifconfig dns1-eth1 10.0.0.240 netmask 255.0.0.0')
     dns2.cmd('ifconfig dns2-eth1 10.0.0.240 netmask 255.0.0.0')
-    dns1.cmd('xterm -T "DNS1" -hold -e  /usr/sbin/named -d 4 -c /etc/bind/dns1/conf/named.conf &')
-    dns2.cmd('xterm -T "DNS2" -hold -e  /usr/sbin/named -d 4 -c /etc/bind/dns2/conf/named.conf &')
+    dns1.cmd('xterm -T "DNS1" -hold -e /usr/sbin/named -c /etc/bind/dns1/conf/named.conf &')
+    dns2.cmd('xterm -T "DNS2" -hold -e /usr/sbin/named -c /etc/bind/dns2/conf/named.conf &')
 
     fs1.cmd('cd fs1')
     fs1.cmd('xterm -T "FTP1" -hold -e ../tftpserver.py -l 10 -b 10.0.0.3 &') #o valor do -l representa um valor simulado de carga para testes de balanceamente
