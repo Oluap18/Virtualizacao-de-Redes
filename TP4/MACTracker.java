@@ -51,7 +51,7 @@ public class MACTracker implements IOFMessageListener, IFloodlightModule {
 
   	StatisticsCollector statistics = new StatisticsCollector();
     SwitchPortBandwidth spb1;
-    
+
     public Map<IPv4Address, List<MacAddress>> anycast = new HashMap();
     public Map<IPv4Address, MacAddress> ipMacs = new HashMap();
 
@@ -71,7 +71,7 @@ public class MACTracker implements IOFMessageListener, IFloodlightModule {
     long linkspeed = 1000000000;
 
 
-    
+
 
   	@Override
   	public String getName() {
@@ -211,12 +211,21 @@ public class MACTracker implements IOFMessageListener, IFloodlightModule {
             lista.add(mac);
             //System.out.println("New target" + target + ": " + mac);
             anycast.put(target, lista);
+            System.out.println("################################");
+            for(MacAddress m : lista){
+                System.out.println("IP Anycast: " + target + ". MAC: " + m);
+            }
+            System.out.println("################################");
         }
         else{
             List<MacAddress> lista = anycast.get(target);
             if(lista.contains(mac) != true){
                 lista.add(mac);
-                //System.out.println("" + mac);
+                System.out.println("################################");
+                for(MacAddress m : lista){
+                    System.out.println("IP Anycast: " + target + ". MAC: " + m);
+                }
+                System.out.println("################################");
             }
         }
     }
@@ -233,7 +242,7 @@ public class MACTracker implements IOFMessageListener, IFloodlightModule {
             eths.add(eth);
             return;
         }
-        
+
         //System.out.println("Swtich: "+sw);
         Ethernet l2 = new Ethernet();
         l2.setSourceMACAddress(eth.getSourceMACAddress());
@@ -271,7 +280,7 @@ public class MACTracker implements IOFMessageListener, IFloodlightModule {
             System.out.println("Não mandei");
         }
       }
-      
+
     public void dnsout(IOFSwitch sw, Ethernet eth, IPv4Address ip){
         IPv4 ipv4 = (IPv4) eth.getPayload();
         UDP udp = (UDP) ipv4.getPayload();
@@ -282,7 +291,7 @@ public class MACTracker implements IOFMessageListener, IFloodlightModule {
             eths.add(eth);
             return;
         }
-        
+
         //System.out.println("DNSout port: "+udp.getSourcePort());
         Ethernet l2 = new Ethernet();
         l2.setSourceMACAddress(eth.getSourceMACAddress());
@@ -292,10 +301,10 @@ public class MACTracker implements IOFMessageListener, IFloodlightModule {
         IPv4 l3 = new IPv4();
         if ((udp.getSourcePort().getPort()==53)&&!((ipv4.getDestinationAddress().equals("10.0.0.5"))||(ipv4.getDestinationAddress().equals("10.0.0.6")))){
             l3.setSourceAddress(ip);
-        } 
+        }
         else{
             l3.setSourceAddress(ipv4.getSourceAddress());
-        } 
+        }
         l3.setDestinationAddress(ipv4.getDestinationAddress());
         l3.setProtocol(IpProtocol.UDP);
         l3.setTtl((byte) 64);
@@ -349,74 +358,6 @@ public class MACTracker implements IOFMessageListener, IFloodlightModule {
 
     }
 
-    public void printDetails(IOFSwitch sw, OFMessage msg, FloodlightContext cntx, Ethernet eth){
-
-
-
-      switch (msg.getType()) {
-      case PACKET_IN:
-          /* Retrieve the deserialized packet in message */
-
-
-          /* Various getters and setters are exposed in Ethernet */
-          MacAddress srcMac = eth.getSourceMACAddress();
-          MacAddress dstMac = eth.getDestinationMACAddress();
-          VlanVid vlanId = VlanVid.ofVlan(eth.getVlanID());
-          //if(sw.getId().getLong() == 1) System.out.println(sw.getId());
-
-          if (eth.getEtherType() == EthType.IPv4) {
-
-              System.out.println("######################################");
-              System.out.println("Switch " + sw.getId().getLong());
-
-              /* We got an IPv4 packet; get the payload from Ethernet */
-              IPv4 ipv4 = (IPv4) eth.getPayload();
-
-              /* Various getters and setters are exposed in IPv4 */
-              IPv4Address dstIp = ipv4.getDestinationAddress();
-              IPv4Address srcIp = ipv4.getSourceAddress();
-
-              System.out.println("IP Source: " + srcIp);
-              System.out.println("IP Destination: " + dstIp);
-
-              /*
-               * Check the IP protocol version of the IPv4 packet's payload.
-               */
-              if (ipv4.getProtocol() == IpProtocol.TCP) {
-
-                  System.out.println("Protocolo TCP");
-
-              } else if (ipv4.getProtocol() == IpProtocol.UDP) {
-
-                  System.out.println("Protocolo UDP");
-
-              } else if(ipv4.getProtocol() == IpProtocol.ICMP){
-
-                System.out.println("Protocolo ICMP");
-
-              }
-
-              System.out.println("######################################");
-
-          } else if (eth.getEtherType() == EthType.ARP) {
-
-              System.out.println("######################################");
-              System.out.println("Switch " + sw.getId().getLong());
-
-              ARP arp = (ARP) eth.getPayload();
-              System.out.println("Protocolo ARP");
-              System.out.println("MAC source: " + srcMac);
-              System.out.println("MAC destination: " + dstMac);
-
-              System.out.println("######################################");
-
-          }
-          break;
-      default:
-          break;
-      }
-    }
-
     /*
   	 * Overridden IOFMessageListener's receive() function//
   	 */
@@ -431,9 +372,8 @@ public class MACTracker implements IOFMessageListener, IFloodlightModule {
   	    case PACKET_IN:
             Ethernet eth = IFloodlightProviderService.bcStore.get(cntx, IFloodlightProviderService.CONTEXT_PI_PAYLOAD);
             OFPacketIn pktIn = (OFPacketIn) msg;
-            //printDetails(sw, msg, cntx, eth);
-            
- 
+
+
             if(eth.getEtherType() == EthType.ARP){
                 ARP arp = (ARP) eth.getPayload();
                 inPort  = Integer.parseInt(pktIn.getMatch().toString().split("=")[1].substring(0,pktIn.getMatch().toString().split("=")[1].length()-1));
@@ -481,29 +421,22 @@ public class MACTracker implements IOFMessageListener, IFloodlightModule {
 
                 }
 
-                else if((sender.equals("10.0.0.3") || sender.equals("10.0.0.4")) && sw.getId().getLong() == 1){
-
-                  //atribuir mac broadcast a ip anycast
-                  arpReply(sw, eth, target, arp);
-
-                }
-
                 //Guardar os MACs associados a cada ip anycast
-                if((str.equals("10.0.0.250") || str.equals("10.0.0.240")) && sw.getId().getLong() == 2){
+                if(sender.equals("10.0.0.250") || sender.equals("10.0.0.240")){
                     anycastUpdate(arp);
                 }
 
 
             }
             else if (eth.getEtherType() == EthType.IPv4) {
-                
+
                 IPv4 ipv4 = (IPv4) eth.getPayload();
                 String source = "" + ipv4.getSourceAddress();
                 String dest = "" + ipv4.getDestinationAddress();
                 //String port = "" + ipv4.getDestinationPort();
 
                 if (ipv4.getProtocol() == IpProtocol.UDP) {
-      
+
                     //Calcular os iddleTime dos cpus
                     if(sw.getId().getLong() == 1 && dest.equals("10.0.0.254") ){
                         Data data = (Data) ipv4.getPayload().getPayload();
@@ -518,12 +451,12 @@ public class MACTracker implements IOFMessageListener, IFloodlightModule {
                         }
                     }
                     else {
- 
+
                         //Distribuir pelos dns
                         if(dest.equals("10.0.0.240")){
 
                             //inPort  = Integer.parseInt(pktIn.getMatch().toString().split("=")[1].substring(0,pktIn.getMatch().toString().split("=")[1].length()-1));
-                  
+
                             if(source.equals("10.0.0.1")){
                                 if (!dnsToggle) {
                                     IPv4Address ipv = IPv4Address.of("10.0.0.5");
@@ -536,7 +469,7 @@ public class MACTracker implements IOFMessageListener, IFloodlightModule {
                                     packetout(sw, eth, ipv);
                                     return Command.STOP;
                                 }
-                                
+
                             }
                             if(source.equals("10.0.0.2")){
                                 IPv4Address ipv = IPv4Address.of("10.0.0.5");
@@ -549,7 +482,7 @@ public class MACTracker implements IOFMessageListener, IFloodlightModule {
 
                             if ((System.currentTimeMillis()-timebefore)>5000) {
                                 //System.out.println("IM now on switch "+ sw.getId());
-       
+
                                 for (int i=1; i<24;i++){
 
                                     try{
@@ -561,7 +494,7 @@ public class MACTracker implements IOFMessageListener, IFloodlightModule {
                                             txmap.put(i,txbw);
                                             bwdmap.put(i,rxbw+txbw);
                                             linkspeed = spb1.getLinkSpeedBitsPerSec().getValue();
-                                        } 
+                                        }
                                     }   catch (Exception e) {
                                         //e.printStackTrace();
                                         logger.trace("Statistics is not ready to give us values now. Trying again in a few seconds.");
@@ -570,10 +503,10 @@ public class MACTracker implements IOFMessageListener, IFloodlightModule {
                                 timebefore = System.currentTimeMillis();
                                 bwd1 =(double) (bwdmap.get(1)/(double)linkspeed)*100.0;
                                 bwd2 =(double) (bwdmap.get(3)/(double)linkspeed)*100.0;
-                            } 
+                            }
 
                             //inPort  = Integer.parseInt(pktIn.getMatch().toString().split("=")[1].substring(0,pktIn.getMatch().toString().split("=")[1].length()-1));
-          
+
 
                             //Now we need to check with port has lower traffic and that is not from where the packet came from
                             System.out.println("Switch capability: "+ (double)linkspeed/1000000.0 + "Mbps");
